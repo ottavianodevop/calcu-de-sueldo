@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La Fichada</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171A">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --asphalt:#14171A;
+    --steel:#222822;
+    --steel-2:#2C332C;
+    --paper:#ECE8DE;
+    --paper-dim:#A9A89F;
+    --hivis:#F5C518;
+    --hivis-dim:#8a7615;
+    --rust:#C75A45;
+    --moss:#7FA37E;
+    --line: rgba(236,232,222,0.10);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--asphalt);
+    color: var(--paper);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    padding: 18px 16px 60px;
+    min-height:100vh;
+  }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom: 18px;
+  }
+  .topbar h1{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    margin:0;
+    color: var(--paper);
+  }
+  .topbar h1 .dot{ color: var(--hivis); }
+  #btn-settings{
+    width:40px; height:40px; border-radius:10px;
+    background: var(--steel);
+    border:1px solid var(--line);
+    color: var(--paper-dim);
+    font-size:18px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  #btn-settings:focus-visible, button:focus-visible, input:focus-visible{
+    outline: 2px solid var(--hivis);
+    outline-offset: 2px;
+  }
+
+  /* ---- punch button ---- */
+  .punch-wrap{ display:flex; flex-direction:column; align-items:center; margin: 10px 0 22px; }
+  .punch{
+    width: 190px; height:190px; border-radius:50%;
+    border: none;
+    background:
+      radial-gradient(circle at 50% 38%, #313930 0%, var(--steel) 60%, var(--steel-2) 100%);
+    box-shadow:
+      inset 0 4px 10px rgba(0,0,0,0.5),
+      inset 0 -3px 8px rgba(255,255,255,0.04),
+      0 0 0 6px var(--asphalt),
+      0 0 0 8px var(--line);
+    color: var(--paper);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer;
+    position:relative;
+    transition: box-shadow .25s ease, transform .15s ease;
+  }
+  .punch:active{ transform: scale(0.97); }
+  .punch.active{
+    box-shadow:
+      inset 0 4px 10px rgba(0,0,0,0.5),
+      0 0 0 6px var(--asphalt),
+      0 0 0 8px var(--hivis-dim),
+      0 0 26px 4px rgba(245,197,24,0.35);
+    animation: pulse-ring 2.2s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce){ .punch.active{ animation:none; } }
+  @keyframes pulse-ring{
+    0%,100%{ box-shadow: inset 0 4px 10px rgba(0,0,0,0.5), 0 0 0 6px var(--asphalt), 0 0 0 8px var(--hivis-dim), 0 0 22px 2px rgba(245,197,24,0.25); }
+    50%{ box-shadow: inset 0 4px 10px rgba(0,0,0,0.5), 0 0 0 6px var(--asphalt), 0 0 0 8px var(--hivis), 0 0 34px 8px rgba(245,197,24,0.45); }
+  }
+  .punch-label{
+    font-family:'Oswald',sans-serif; font-weight:600; font-size:16px;
+    letter-spacing:0.05em; line-height:1.3; text-align:center;
+  }
+  .punch.active .punch-label{ color: var(--hivis); }
+  .punch-timer{
+    font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:500;
+    margin-top:4px; letter-spacing:0.02em;
+  }
+  .punch-stamp{
+    position:absolute; inset:0; border-radius:50%;
+    border: 3px solid var(--hivis); opacity:0; pointer-events:none;
+  }
+  .punch-stamp.fire{ animation: stamp 0.5s ease-out; }
+  @media (prefers-reduced-motion: reduce){ .punch-stamp.fire{ animation:none; } }
+  @keyframes stamp{
+    0%{ opacity:0.9; transform: scale(0.85); }
+    100%{ opacity:0; transform: scale(1.35); }
+  }
+  .punch-sub{
+    margin-top:12px; font-family:'IBM Plex Mono',monospace; font-size:12px;
+    color: var(--paper-dim); letter-spacing:0.03em;
+  }
+
+  /* ---- stats ---- */
+  .stats{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:20px; }
+  .stat-card{
+    background: var(--steel); border:1px solid var(--line); border-radius: var(--radius);
+    padding:10px 8px; display:flex; flex-direction:column; gap:2px;
+  }
+  .stat-label{ font-size:10px; letter-spacing:0.1em; color:var(--paper-dim); font-family:'Oswald',sans-serif; }
+  .stat-value{ font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:600; }
+  .stat-sub{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); }
+
+  /* ---- segmented nav ---- */
+  .segmented{ display:flex; gap:6px; margin-bottom:14px; }
+  .seg{
+    flex:1; padding:9px 0; border-radius:10px; border:1px solid var(--line);
+    background:transparent; color:var(--paper-dim); font-family:'Inter',sans-serif;
+    font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .seg.active{ background: var(--steel-2); color: var(--hivis); border-color: var(--hivis-dim); }
+
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  .add-link{
+    width:100%; padding:10px; margin-bottom:10px;
+    background:transparent; border:1px dashed var(--line); border-radius:10px;
+    color: var(--paper-dim); font-size:13px; cursor:pointer;
+  }
+  .add-link:hover{ border-color: var(--hivis-dim); color:var(--paper); }
+
+  .inline-form{
+    display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;
+    background:var(--steel); border:1px solid var(--line); border-radius:var(--radius); padding:12px;
+  }
+  .inline-form label{ font-size:11px; color:var(--paper-dim); display:block; margin-bottom:3px; }
+  .inline-form .field{ flex:1; min-width:90px; }
+  .inline-form input{
+    width:100%; padding:8px; border-radius:8px; border:1px solid var(--line);
+    background: var(--asphalt); color: var(--paper); font-family:'IBM Plex Mono',monospace; font-size:13px;
+  }
+  .inline-form button{
+    width:100%; padding:9px; border-radius:8px; border:none;
+    background: var(--hivis); color:#1a1a14; font-weight:700; font-family:'Inter',sans-serif;
+    font-size:13px; cursor:pointer; margin-top:4px;
+  }
+
+  .ledger{ list-style:none; margin:0; padding:0; }
+  .ledger li{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 2px; border-bottom:1px solid var(--line); gap:10px;
+  }
+  .ledger li:last-child{ border-bottom:none; }
+  .led-main{ display:flex; flex-direction:column; gap:2px; }
+  .led-date{ font-size:11px; color: var(--paper-dim); font-family:'IBM Plex Mono',monospace; }
+  .led-desc{ font-size:13px; }
+  .led-amount{ font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:600; white-space:nowrap; }
+  .led-amount.pos{ color: var(--moss); }
+  .led-amount.neg{ color: var(--rust); }
+  .led-del{
+    background:none; border:none; color:var(--paper-dim); font-size:16px; cursor:pointer;
+    padding:4px 6px; line-height:1;
+  }
+  .led-del:hover{ color: var(--rust); }
+  .empty-row{ color: var(--paper-dim); font-size:13px; padding:14px 2px; text-align:center; }
+
+  .net-line{
+    margin-top:4px; padding:12px; background:var(--steel-2); border-radius:var(--radius);
+    border:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;
+    font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.03em;
+  }
+  .net-line span.amt{ font-family:'IBM Plex Mono',monospace; font-size:16px; }
+
+  /* ---- modal ---- */
+  .modal{
+    position:fixed; inset:0; background:rgba(10,12,10,0.7);
+    display:flex; align-items:center; justify-content:center; padding:20px; z-index:50;
+  }
+  .modal[hidden]{ display:none; }
+  .modal-card{
+    background: var(--steel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px; width:100%; max-width:360px;
+  }
+  .modal-card h2{ font-family:'Oswald',sans-serif; font-size:16px; margin:0 0 14px; letter-spacing:0.04em; }
+  .modal-card label{ font-size:12px; color:var(--paper-dim); display:block; margin:10px 0 4px; }
+  .modal-card input{
+    width:100%; padding:9px; border-radius:8px; border:1px solid var(--line);
+    background: var(--asphalt); color:var(--paper); font-family:'IBM Plex Mono',monospace; font-size:14px;
+  }
+  .modal-actions{ display:flex; gap:8px; margin-top:16px; }
+  .modal-actions button{
+    flex:1; padding:10px; border-radius:8px; border:none; font-weight:700; cursor:pointer; font-size:13px;
+  }
+  .btn-cancel{ background: transparent; border:1px solid var(--line) !important; color:var(--paper-dim); }
+  .btn-save{ background: var(--hivis); color:#1a1a14; }
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background: var(--steel-2); border:1px solid var(--hivis-dim); color:var(--paper);
+    padding:10px 16px; border-radius:10px; font-size:13px; display:flex; gap:10px; align-items:center;
+    z-index:60;
+  }
+  .toast button{ background:none; border:none; color:var(--hivis); font-weight:700; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <h1>LA FICHADA<span class="dot">.</span></h1>
+    <button id="btn-settings" aria-label="Configuración">⚙</button>
+  </header>
+
+  <section class="punch-wrap">
+    <button id="punch-btn" class="punch idle" aria-live="polite">
+      <span class="punch-stamp" id="punch-stamp"></span>
+      <span class="punch-label" id="punch-label">INICIAR<br>TURNO</span>
+      <span class="punch-timer" id="punch-timer" hidden>00:00:00</span>
+    </button>
+    <p class="punch-sub" id="punch-sub">Tarifa: $0 / hora</p>
+  </section>
+
+  <section class="stats">
+    <div class="stat-card">
+      <span class="stat-label">HOY</span>
+      <span class="stat-value" id="stat-today-money">$0</span>
+      <span class="stat-sub" id="stat-today-hours">0h 0m</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">SEMANA</span>
+      <span class="stat-value" id="stat-week-money">$0</span>
+      <span class="stat-sub" id="stat-week-hours">0h 0m</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">MES</span>
+      <span class="stat-value" id="stat-month-money">$0</span>
+      <span class="stat-sub" id="stat-month-hours">0h 0m</span>
+    </div>
+  </section>
+
+  <nav class="segmented">
+    <button class="seg active" data-view="turnos">Turnos</button>
+    <button class="seg" data-view="adelantos">Adelantos</button>
+    <button class="seg" data-view="feriados">Feriados</button>
+  </nav>
+
+  <section id="view-turnos" class="view active">
+    <button class="add-link" id="btn-add-shift">+ Agregar turno manual</button>
+    <ul class="ledger" id="list-shifts"></ul>
+  </section>
+
+  <section id="view-adelantos" class="view">
+    <form class="inline-form" id="form-advance">
+      <div class="field" style="flex-basis:100%;">
+        <label for="adv-amount">Monto</label>
+        <input id="adv-amount" type="number" inputmode="decimal" placeholder="0" required min="0">
+      </div>
+      <div class="field" style="flex-basis:100%;">
+        <label for="adv-note">Nota (opcional)</label>
+        <input id="adv-note" type="text" placeholder="Ej: adelanto de la semana">
+      </div>
+      <div class="field" style="flex-basis:100%;">
+        <label for="adv-date">Fecha</label>
+        <input id="adv-date" type="date">
+      </div>
+      <button type="submit" style="flex-basis:100%;">Registrar adelanto</button>
+    </form>
+    <p class="net-line">
+      <span>Neto a cobrar este mes</span>
+      <span class="amt" id="net-mes">$0</span>
+    </p>
+    <ul class="ledger" id="list-advances" style="margin-top:14px;"></ul>
+  </section>
+
+  <section id="view-feriados" class="view">
+    <form class="inline-form" id="form-holiday">
+      <div class="field" style="flex-basis:100%;">
+        <label for="hol-date">Fecha</label>
+        <input id="hol-date" type="date" required>
+      </div>
+      <div class="field" style="flex-basis:100%;">
+        <label for="hol-note">Nota (opcional)</label>
+        <input id="hol-note" type="text" placeholder="Ej: feriado nacional">
+      </div>
+      <button type="submit" style="flex-basis:100%;">Marcar feriado</button>
+    </form>
+    <p class="net-line">
+      <span>Feriados este mes</span>
+      <span class="amt" id="hol-count-mes">0</span>
+    </p>
+    <ul class="ledger" id="list-holidays" style="margin-top:14px;"></ul>
+  </section>
+
+</div>
+
+<div class="modal" id="modal-settings" hidden>
+  <div class="modal-card">
+    <h2>Configuración</h2>
+    <label for="set-tarifa">Tarifa por hora ($)</label>
+    <input id="set-tarifa" type="number" inputmode="decimal" min="0" placeholder="0">
+    <div class="modal-actions">
+      <button class="btn-cancel" id="set-cancel">Cancelar</button>
+      <button class="btn-save" id="set-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal-shift" hidden>
+  <div class="modal-card">
+    <h2>Turno manual</h2>
+    <label for="ms-date">Fecha</label>
+    <input id="ms-date" type="date">
+    <label for="ms-start">Hora inicio</label>
+    <input id="ms-start" type="time">
+    <label for="ms-end">Hora fin</label>
+    <input id="ms-end" type="time">
+    <div class="modal-actions">
+      <button class="btn-cancel" id="ms-cancel">Cancelar</button>
+      <button class="btn-save" id="ms-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden>
+  <span id="toast-msg"></span>
+  <button id="toast-undo">Deshacer</button>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'fichada-data-v1';
+  const DEFAULT_STATE = { tarifaHora: 0, shifts: [], advances: [], holidays: [] };
+  let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  let pendingUndo = null;
+  let toastTimer = null;
+  let tickTimer = null;
+
+  // ---------- storage ----------
+  async function loadState(){
+    try{
+      const res = await window.storage.get(STORAGE_KEY);
+      if(res && res.value){
+        const parsed = JSON.parse(res.value);
+        state = Object.assign({}, DEFAULT_STATE, parsed);
+      }
+    }catch(e){
+      // no existing data yet — keep defaults
+    }
+  }
+  async function saveState(){
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(state));
+    }catch(e){
+      console.error('No se pudo guardar', e);
+    }
+  }
+
+  // ---------- helpers ----------
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function dateKey(d){ const x=new Date(d); return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`; }
+  function todayKey(){ return dateKey(new Date()); }
+  function getWeekStart(d){
+    const x=new Date(d); const day=(x.getDay()+6)%7;
+    x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x;
+  }
+  function isSameDayKey(iso, key){ return dateKey(iso)===key; }
+  function isSameWeek(iso, ref){ return getWeekStart(iso).getTime()===getWeekStart(ref).getTime(); }
+  function isSameMonth(iso, ref){
+    const a=new Date(iso), b=new Date(ref);
+    return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth();
+  }
+  function fmtMoney(n){
+    const v = Math.round(n||0);
+    return '$' + v.toLocaleString('es-AR');
+  }
+  function fmtHM(totalMinutes){
+    const h = Math.floor(totalMinutes/60), m = Math.round(totalMinutes%60);
+    return `${h}h ${m}m`;
+  }
+  function fmtClock(ms){
+    const totalSec = Math.floor(ms/1000);
+    const h = Math.floor(totalSec/3600), m = Math.floor((totalSec%3600)/60), s = totalSec%60;
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+  function fmtDateShort(iso){
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit' });
+  }
+
+  // ---------- punch button ----------
+  const punchBtn = document.getElementById('punch-btn');
+  const punchLabel = document.getElementById('punch-label');
+  const punchTimer = document.getElementById('punch-timer');
+  const punchStamp = document.getElementById('punch-stamp');
+  const punchSub = document.getElementById('punch-sub');
+
+  function activeShift(){
+    return state.shifts.find(s => !s.end);
+  }
+
+  function refreshPunchUI(){
+    const active = activeShift();
+    if(active){
+      punchBtn.classList.add('active');
+      punchLabel.innerHTML = 'FINALIZAR<br>TURNO';
+      punchTimer.hidden = false;
+      if(!tickTimer){
+        tickTimer = setInterval(()=>{
+          punchTimer.textContent = fmtClock(Date.now() - new Date(active.start).getTime());
+        }, 1000);
+      }
+      punchTimer.textContent = fmtClock(Date.now() - new Date(active.start).getTime());
+    } else {
+      punchBtn.classList.remove('active');
+      punchLabel.innerHTML = 'INICIAR<br>TURNO';
+      punchTimer.hidden = true;
+      if(tickTimer){ clearInterval(tickTimer); tickTimer = null; }
+    }
+    punchSub.textContent = `Tarifa: ${fmtMoney(state.tarifaHora)} / hora`;
+  }
+
+  punchBtn.addEventListener('click', async ()=>{
+    punchStamp.classList.remove('fire');
+    requestAnimationFrame(()=>punchStamp.classList.add('fire'));
+    const active = activeShift();
+    if(active){
+      active.end = new Date().toISOString();
+      const durMin = (new Date(active.end) - new Date(active.start)) / 60000;
+      active.durationMin = durMin;
+      active.earning = (durMin/60) * state.tarifaHora;
+    } else {
+      state.shifts.push({
+        id: 'sh_'+Date.now(),
+        start: new Date().toISOString(),
+        end: null,
+        durationMin: 0,
+        earning: 0
+      });
+    }
+    await saveState();
+    refreshPunchUI();
+    renderAll();
+  });
+
+  // ---------- stats ----------
+  function computeRange(filterFn){
+    let mins = 0, money = 0;
+    state.shifts.forEach(s=>{
+      if(!s.end) return;
+      if(filterFn(s.start)){
+        mins += s.durationMin;
+        money += s.earning;
+      }
+    });
+    return { mins, money };
+  }
+
+  function renderStats(){
+    const now = new Date();
+    const today = computeRange(iso => isSameDayKey(iso, todayKey()));
+    const week = computeRange(iso => isSameWeek(iso, now));
+    const month = computeRange(iso => isSameMonth(iso, now));
+
+    document.getElementById('stat-today-money').textContent = fmtMoney(today.money);
+    document.getElementById('stat-today-hours').textContent = fmtHM(today.mins);
+    document.getElementById('stat-week-money').textContent = fmtMoney(week.money);
+    document.getElementById('stat-week-hours').textContent = fmtHM(week.mins);
+    document.getElementById('stat-month-money').textContent = fmtMoney(month.money);
+    document.getElementById('stat-month-hours').textContent = fmtHM(month.mins);
+
+    const advancesMonth = state.advances
+      .filter(a => isSameMonth(a.date, now))
+      .reduce((sum,a)=>sum+Number(a.amount), 0);
+    const net = month.money - advancesMonth;
+    const netEl = document.getElementById('net-mes');
+    netEl.textContent = fmtMoney(net);
+    netEl.style.color = net < 0 ? 'var(--rust)' : 'var(--moss)';
+
+    const holCountMonth = state.holidays.filter(h => isSameMonth(h.date, now)).length;
+    document.getElementById('hol-count-mes').textContent = holCountMonth;
+  }
+
+  // ---------- lists ----------
+  function renderShifts(){
+    const ul = document.getElementById('list-shifts');
+    ul.innerHTML = '';
+    const sorted = [...state.shifts].sort((a,b)=> new Date(b.start) - new Date(a.start));
+    if(sorted.length === 0){
+      ul.innerHTML = '<li class="empty-row" style="display:block;">Todavía no hay turnos registrados.</li>';
+      return;
+    }
+    sorted.forEach(s=>{
+      const li = document.createElement('li');
+      const main = document.createElement('div');
+      main.className = 'led-main';
+      const dateEl = document.createElement('span');
+      dateEl.className = 'led-date';
+      dateEl.textContent = fmtDateShort(s.start);
+      const descEl = document.createElement('span');
+      descEl.className = 'led-desc';
+      if(!s.end){
+        descEl.textContent = 'En curso…';
+      } else {
+        const startT = new Date(s.start).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+        const endT = new Date(s.end).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+        descEl.textContent = `${startT} – ${endT} · ${fmtHM(s.durationMin)}`;
+      }
+      main.appendChild(dateEl); main.appendChild(descEl);
+
+      const amount = document.createElement('span');
+      amount.className = 'led-amount pos';
+      amount.textContent = s.end ? fmtMoney(s.earning) : '—';
+
+      const del = document.createElement('button');
+      del.className = 'led-del'; del.setAttribute('aria-label','Eliminar turno'); del.textContent = '✕';
+      del.addEventListener('click', ()=> deleteItem('shifts', s.id));
+
+      li.appendChild(main); li.appendChild(amount); li.appendChild(del);
+      ul.appendChild(li);
+    });
+  }
+
+  function renderAdvances(){
+    const ul = document.getElementById('list-advances');
+    ul.innerHTML = '';
+    const sorted = [...state.advances].sort((a,b)=> new Date(b.date) - new Date(a.date));
+    if(sorted.length === 0){
+      ul.innerHTML = '<li class="empty-row" style="display:block;">No hay adelantos registrados.</li>';
+      return;
+    }
+    sorted.forEach(a=>{
+      const li = document.createElement('li');
+      const main = document.createElement('div');
+      main.className = 'led-main';
+      const dateEl = document.createElement('span'); dateEl.className='led-date'; dateEl.textContent = fmtDateShort(a.date);
+      const descEl = document.createElement('span'); descEl.className='led-desc'; descEl.textContent = a.note || 'Adelanto';
+      main.appendChild(dateEl); main.appendChild(descEl);
+
+      const amount = document.createElement('span');
+      amount.className = 'led-amount neg';
+      amount.textContent = '−' + fmtMoney(a.amount);
+
+      const del = document.createElement('button');
+      del.className = 'led-del'; del.setAttribute('aria-label','Eliminar adelanto'); del.textContent = '✕';
+      del.addEventListener('click', ()=> deleteItem('advances', a.id));
+
+      li.appendChild(main); li.appendChild(amount); li.appendChild(del);
+      ul.appendChild(li);
+    });
+  }
+
+  function renderHolidays(){
+    const ul = document.getElementById('list-holidays');
+    ul.innerHTML = '';
+    const sorted = [...state.holidays].sort((a,b)=> new Date(b.date) - new Date(a.date));
+    if(sorted.length === 0){
+      ul.innerHTML = '<li class="empty-row" style="display:block;">No hay feriados marcados.</li>';
+      return;
+    }
+    sorted.forEach(h=>{
+      const li = document.createElement('li');
+      const main = document.createElement('div');
+      main.className = 'led-main';
+      const dateEl = document.createElement('span'); dateEl.className='led-date'; dateEl.textContent = fmtDateShort(h.date);
+      const descEl = document.createElement('span'); descEl.className='led-desc'; descEl.textContent = h.note || 'Feriado';
+      main.appendChild(dateEl); main.appendChild(descEl);
+
+      const del = document.createElement('button');
+      del.className = 'led-del'; del.setAttribute('aria-label','Eliminar feriado'); del.textContent = '✕';
+      del.addEventListener('click', ()=> deleteItem('holidays', h.id));
+
+      li.appendChild(main); li.appendChild(del);
+      ul.appendChild(li);
+    });
+  }
+
+  function renderAll(){
+    renderStats();
+    renderShifts();
+    renderAdvances();
+    renderHolidays();
+  }
+
+  // ---------- delete + undo ----------
+  function deleteItem(collection, id){
+    const arr = state[collection];
+    const idx = arr.findIndex(x=>x.id===id);
+    if(idx===-1) return;
+    const [removed] = arr.splice(idx,1);
+    pendingUndo = { collection, item: removed, idx };
+    saveState();
+    renderAll();
+    showToast('Eliminado');
+  }
+
+  function showToast(msg){
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>{ toast.hidden = true; pendingUndo = null; }, 4000);
+  }
+  document.getElementById('toast-undo').addEventListener('click', ()=>{
+    if(pendingUndo){
+      state[pendingUndo.collection].splice(pendingUndo.idx, 0, pendingUndo.item);
+      saveState();
+      renderAll();
+    }
+    document.getElementById('toast').hidden = true;
+    pendingUndo = null;
+  });
+
+  // ---------- segmented nav ----------
+  document.querySelectorAll('.seg').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.seg').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('view-'+btn.dataset.view).classList.add('active');
+    });
+  });
+
+  // ---------- settings modal ----------
+  const modalSettings = document.getElementById('modal-settings');
+  document.getElementById('btn-settings').addEventListener('click', ()=>{
+    document.getElementById('set-tarifa').value = state.tarifaHora || '';
+    modalSettings.hidden = false;
+  });
+  document.getElementById('set-cancel').addEventListener('click', ()=> modalSettings.hidden = true);
+  document.getElementById('set-save').addEventListener('click', async ()=>{
+    const v = Number(document.getElementById('set-tarifa').value) || 0;
+    state.tarifaHora = v;
+    await saveState();
+    modalSettings.hidden = true;
+    refreshPunchUI();
+    renderAll();
+  });
+
+  // ---------- manual shift modal ----------
+  const modalShift = document.getElementById('modal-shift');
+  document.getElementById('btn-add-shift').addEventListener('click', ()=>{
+    const now = new Date();
+    document.getElementById('ms-date').value = dateKey(now);
+    document.getElementById('ms-start').value = '';
+    document.getElementById('ms-end').value = '';
+    modalShift.hidden = false;
+  });
+  document.getElementById('ms-cancel').addEventListener('click', ()=> modalShift.hidden = true);
+  document.getElementById('ms-save').addEventListener('click', async ()=>{
+    const dateVal = document.getElementById('ms-date').value;
+    const startVal = document.getElementById('ms-start').value;
+    const endVal = document.getElementById('ms-end').value;
+    if(!dateVal || !startVal || !endVal) return;
+    const start = new Date(`${dateVal}T${startVal}:00`);
+    const end = new Date(`${dateVal}T${endVal}:00`);
+    if(end <= start) return;
+    const durMin = (end - start) / 60000;
+    state.shifts.push({
+      id: 'sh_'+Date.now(),
+      start: start.toISOString(),
+      end: end.toISOString(),
+      durationMin: durMin,
+      earning: (durMin/60) * state.tarifaHora
+    });
+    await saveState();
+    modalShift.hidden = true;
+    renderAll();
+  });
+
+  // ---------- advances form ----------
+  document.getElementById('form-advance').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const amount = Number(document.getElementById('adv-amount').value);
+    if(!amount || amount<=0) return;
+    const note = document.getElementById('adv-note').value.trim();
+    const dateVal = document.getElementById('adv-date').value || todayKey();
+    state.advances.push({ id:'adv_'+Date.now(), amount, note, date: new Date(dateVal+'T12:00:00').toISOString() });
+    await saveState();
+    e.target.reset();
+    renderAll();
+  });
+
+  // ---------- holidays form ----------
+  document.getElementById('form-holiday').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const dateVal = document.getElementById('hol-date').value;
+    if(!dateVal) return;
+    const note = document.getElementById('hol-note').value.trim();
+    state.holidays.push({ id:'hol_'+Date.now(), date: new Date(dateVal+'T12:00:00').toISOString(), note });
+    await saveState();
+    e.target.reset();
+    renderAll();
+  });
+
+  // ---------- init ----------
+  (async function init(){
+    await loadState();
+    document.getElementById('adv-date').value = todayKey();
+    refreshPunchUI();
+    renderAll();
+    if(!state.tarifaHora){
+      document.getElementById('set-tarifa').value = '';
+      modalSettings.hidden = false;
+    }
+  })();
+
+  // ---------- service worker (for offline use once hosted) ----------
+  if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+
+})();
+</script>
+</body>
+</html>
