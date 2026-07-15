@@ -7,609 +7,679 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#14171A">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  :root{
-    --asphalt:#14171A; --steel:#222822; --steel-2:#2C332C;
-    --paper:#ECE8DE; --paper-dim:#A9A89F;
-    --hivis:#F5C518; --hivis-dim:#8a7615;
-    --rust:#C75A45; --moss:#7FA37E;
-    --line: rgba(236,232,222,0.10); --radius: 14px;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{ background:var(--asphalt); color:var(--paper); font-family:'Inter',sans-serif; min-height:100vh; -webkit-tap-highlight-color:transparent; }
-  .app{ max-width:480px; margin:0 auto; padding:18px 16px 60px; min-height:100vh; }
-  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
-  .topbar h1{ font-family:'Oswald',sans-serif; font-weight:700; font-size:22px; letter-spacing:0.06em; margin:0; color:var(--paper); }
-  .topbar h1 .dot{ color:var(--hivis); }
-  #btn-settings{ width:40px; height:40px; border-radius:10px; background:var(--steel); border:1px solid var(--line); color:var(--paper-dim); font-size:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-  button:focus-visible, input:focus-visible{ outline:2px solid var(--hivis); outline-offset:2px; }
+:root{
+  --bg:#14171A;--steel:#222822;--steel2:#2C332C;
+  --paper:#ECE8DE;--dim:#A9A89F;
+  --hivis:#F5C518;--hivis-d:#8a7615;
+  --moss:#7FA37E;--rust:#C75A45;
+  --line:rgba(236,232,222,0.10);--r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--paper);font-family:'Inter',sans-serif;min-height:100vh;-webkit-tap-highlight-color:transparent;}
+.app{max-width:520px;margin:0 auto;padding:18px 16px 60px;}
 
-  .punch-wrap{ display:flex; flex-direction:column; align-items:center; margin:10px 0 22px; }
-  .punch{ width:190px; height:190px; border-radius:50%; border:none; background:radial-gradient(circle at 50% 38%, #313930 0%, var(--steel) 60%, var(--steel-2) 100%); box-shadow:inset 0 4px 10px rgba(0,0,0,0.5),inset 0 -3px 8px rgba(255,255,255,0.04),0 0 0 6px var(--asphalt),0 0 0 8px var(--line); color:var(--paper); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; position:relative; transition:box-shadow .25s ease,transform .15s ease; }
-  .punch:active{ transform:scale(0.97); }
-  .punch.active{ box-shadow:inset 0 4px 10px rgba(0,0,0,0.5),0 0 0 6px var(--asphalt),0 0 0 8px var(--hivis-dim),0 0 26px 4px rgba(245,197,24,0.35); animation:pulse-ring 2.2s ease-in-out infinite; }
-  @media(prefers-reduced-motion:reduce){ .punch.active{animation:none;} }
-  @keyframes pulse-ring{
-    0%,100%{ box-shadow:inset 0 4px 10px rgba(0,0,0,0.5),0 0 0 6px var(--asphalt),0 0 0 8px var(--hivis-dim),0 0 22px 2px rgba(245,197,24,0.25); }
-    50%{ box-shadow:inset 0 4px 10px rgba(0,0,0,0.5),0 0 0 6px var(--asphalt),0 0 0 8px var(--hivis),0 0 34px 8px rgba(245,197,24,0.45); }
-  }
-  .punch-label{ font-family:'Oswald',sans-serif; font-weight:600; font-size:16px; letter-spacing:0.05em; line-height:1.3; text-align:center; }
-  .punch.active .punch-label{ color:var(--hivis); }
-  .punch-timer{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:500; margin-top:4px; letter-spacing:0.02em; }
-  .punch-stamp{ position:absolute; inset:0; border-radius:50%; border:3px solid var(--hivis); opacity:0; pointer-events:none; }
-  .punch-stamp.fire{ animation:stamp 0.5s ease-out; }
-  @media(prefers-reduced-motion:reduce){ .punch-stamp.fire{animation:none;} }
-  @keyframes stamp{ 0%{opacity:0.9;transform:scale(0.85);} 100%{opacity:0;transform:scale(1.35);} }
-  .punch-sub{ margin-top:12px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim); letter-spacing:0.03em; }
+/* topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.topbar h1{font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;letter-spacing:.06em;}
+.topbar h1 span{color:var(--hivis);}
+#btn-cfg{width:38px;height:38px;border-radius:10px;background:var(--steel);border:1px solid var(--line);color:var(--dim);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 
-  .stats{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:20px; }
-  .stat-card{ background:var(--steel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 8px; display:flex; flex-direction:column; gap:2px; }
-  .stat-label{ font-size:10px; letter-spacing:0.1em; color:var(--paper-dim); font-family:'Oswald',sans-serif; }
-  .stat-value{ font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:600; }
-  .stat-sub{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); }
+/* entrada / salida */
+.punch-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.punch-btn{padding:22px 10px;border-radius:var(--r);border:none;font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:all .2s;}
+#btn-entrada{background:var(--steel);color:var(--paper);}
+#btn-entrada.active{background:var(--moss);color:#0e1a0e;box-shadow:0 0 18px rgba(127,163,126,.4);}
+#btn-salida{background:var(--steel);color:var(--paper);}
+#btn-salida.ready{background:var(--rust);color:#fff;box-shadow:0 0 18px rgba(199,90,69,.35);}
+.punch-btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;}
 
-  .segmented{ display:flex; gap:6px; margin-bottom:14px; }
-  .seg{ flex:1; padding:9px 0; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--paper-dim); font-family:'Inter',sans-serif; font-size:13px; font-weight:600; cursor:pointer; }
-  .seg.active{ background:var(--steel-2); color:var(--hivis); border-color:var(--hivis-dim); }
+/* timer */
+.timer-row{text-align:center;margin-bottom:20px;}
+#timer-display{font-family:'IBM Plex Mono',monospace;font-size:32px;font-weight:600;color:var(--hivis);letter-spacing:.04em;}
+#timer-sub{font-size:11px;color:var(--dim);font-family:'IBM Plex Mono',monospace;margin-top:4px;}
 
-  .view{ display:none; }
-  .view.active{ display:block; }
+/* stats */
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;}
+.stat-card{background:var(--steel);border:1px solid var(--line);border-radius:var(--r);padding:12px 8px;}
+.stat-label{font-size:10px;letter-spacing:.1em;color:var(--dim);font-family:'Oswald',sans-serif;display:block;margin-bottom:4px;}
+.stat-money{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;display:block;}
+.stat-hours{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);display:block;margin-top:2px;}
 
-  .add-link{ width:100%; padding:10px; margin-bottom:10px; background:transparent; border:1px dashed var(--line); border-radius:10px; color:var(--paper-dim); font-size:13px; cursor:pointer; }
-  .add-link:hover{ border-color:var(--hivis-dim); color:var(--paper); }
+/* tabs */
+.tabs{display:flex;gap:6px;margin-bottom:14px;}
+.tab{flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--dim);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.tab.on{background:var(--steel2);color:var(--hivis);border-color:var(--hivis-d);}
+.view{display:none;}.view.on{display:block;}
 
-  .btn-excel{ width:100%; padding:10px; margin-bottom:14px; background:transparent; border:1px solid var(--moss); border-radius:10px; color:var(--moss); font-size:13px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; }
-  .btn-excel:hover{ background:rgba(127,163,126,0.1); }
+/* botones add */
+.btn-add{width:100%;padding:10px;margin-bottom:10px;background:transparent;border:1px dashed var(--line);border-radius:10px;color:var(--dim);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;}
+.btn-add:hover{border-color:var(--hivis-d);color:var(--paper);}
+.btn-excel{width:100%;padding:10px;margin-bottom:14px;background:transparent;border:1px solid var(--moss);border-radius:10px;color:var(--moss);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
 
-  .inline-form{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; background:var(--steel); border:1px solid var(--line); border-radius:var(--radius); padding:12px; }
-  .inline-form label{ font-size:11px; color:var(--paper-dim); display:block; margin-bottom:3px; }
-  .inline-form .field{ flex:1; min-width:90px; }
-  .inline-form input{ width:100%; padding:8px; border-radius:8px; border:1px solid var(--line); background:var(--asphalt); color:var(--paper); font-family:'IBM Plex Mono',monospace; font-size:13px; }
-  .inline-form button{ width:100%; padding:9px; border-radius:8px; border:none; background:var(--hivis); color:#1a1a14; font-weight:700; font-family:'Inter',sans-serif; font-size:13px; cursor:pointer; margin-top:4px; }
+/* form inline */
+.iform{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;background:var(--steel);border:1px solid var(--line);border-radius:var(--r);padding:12px;}
+.iform label{font-size:11px;color:var(--dim);display:block;margin-bottom:3px;}
+.ifield{flex:1;min-width:90px;}
+.iform input{width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:13px;}
+.iform .ibtn{width:100%;padding:9px;border-radius:8px;border:none;background:var(--hivis);color:#1a1a14;font-weight:700;font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;margin-top:4px;}
 
-  .ledger{ list-style:none; margin:0; padding:0; }
-  .ledger li{ display:flex; justify-content:space-between; align-items:center; padding:10px 2px; border-bottom:1px solid var(--line); gap:10px; }
-  .ledger li:last-child{ border-bottom:none; }
-  .led-main{ display:flex; flex-direction:column; gap:2px; }
-  .led-date{ font-size:11px; color:var(--paper-dim); font-family:'IBM Plex Mono',monospace; }
-  .led-desc{ font-size:13px; }
-  .led-amount{ font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:600; white-space:nowrap; }
-  .led-amount.pos{ color:var(--moss); }
-  .led-amount.neg{ color:var(--rust); }
-  .led-del{ background:none; border:none; color:var(--paper-dim); font-size:16px; cursor:pointer; padding:4px 6px; line-height:1; }
-  .led-del:hover{ color:var(--rust); }
-  .empty-row{ color:var(--paper-dim); font-size:13px; padding:14px 2px; text-align:center; }
+/* neto */
+.net-bar{padding:12px;background:var(--steel2);border-radius:var(--r);border:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.03em;}
+.net-bar .amt{font-family:'IBM Plex Mono',monospace;font-size:16px;}
 
-  .net-line{ margin-top:4px; padding:12px; background:var(--steel-2); border-radius:var(--radius); border:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.03em; }
-  .net-line span.amt{ font-family:'IBM Plex Mono',monospace; font-size:16px; }
+/* lista */
+.ledger{list-style:none;}
+.ledger li{display:flex;justify-content:space-between;align-items:center;padding:10px 2px;border-bottom:1px solid var(--line);gap:8px;}
+.ledger li:last-child{border-bottom:none;}
+.led-main{display:flex;flex-direction:column;gap:2px;flex:1;}
+.led-date{font-size:11px;color:var(--dim);font-family:'IBM Plex Mono',monospace;}
+.led-desc{font-size:13px;}
+.led-amt{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;white-space:nowrap;}
+.pos{color:var(--moss);}.neg{color:var(--rust);}
+.del-btn{background:none;border:none;color:var(--dim);font-size:15px;cursor:pointer;padding:4px 6px;}
+.del-btn:hover{color:var(--rust);}
+.empty{color:var(--dim);font-size:13px;padding:14px 2px;text-align:center;}
 
-  .modal{ position:fixed; inset:0; background:rgba(10,12,10,0.7); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; }
-  .modal[hidden]{ display:none; }
-  .modal-card{ background:var(--steel); border:1px solid var(--line); border-radius:var(--radius); padding:18px; width:100%; max-width:360px; }
-  .modal-card h2{ font-family:'Oswald',sans-serif; font-size:16px; margin:0 0 14px; letter-spacing:0.04em; }
-  .modal-card label{ font-size:12px; color:var(--paper-dim); display:block; margin:10px 0 4px; }
-  .modal-card input{ width:100%; padding:9px; border-radius:8px; border:1px solid var(--line); background:var(--asphalt); color:var(--paper); font-family:'IBM Plex Mono',monospace; font-size:14px; }
-  .modal-actions{ display:flex; gap:8px; margin-top:16px; }
-  .modal-actions button{ flex:1; padding:10px; border-radius:8px; border:none; font-weight:700; cursor:pointer; font-size:13px; }
-  .btn-cancel{ background:transparent; border:1px solid var(--line) !important; color:var(--paper-dim); }
-  .btn-save{ background:var(--hivis); color:#1a1a14; }
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(10,12,10,.75);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
+.modal[hidden]{display:none;}
+.mcard{background:var(--steel);border:1px solid var(--line);border-radius:var(--r);padding:20px;width:100%;max-width:360px;}
+.mcard h2{font-family:'Oswald',sans-serif;font-size:15px;letter-spacing:.04em;margin-bottom:14px;}
+.mcard label{font-size:11px;color:var(--dim);display:block;margin:10px 0 4px;}
+.mcard input{width:100%;padding:9px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:14px;}
+.mrow{display:flex;gap:8px;margin-top:16px;}
+.mrow button{flex:1;padding:10px;border-radius:8px;border:none;font-weight:700;cursor:pointer;font-size:13px;}
+.mbtn-cancel{background:transparent;border:1px solid var(--line)!important;color:var(--dim);}
+.mbtn-ok{background:var(--hivis);color:#1a1a14;}
+hr.sep{border:none;border-top:1px solid var(--line);margin:16px 0;}
+.sec-lbl{font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:.1em;color:var(--dim);margin-bottom:8px;display:block;}
 
-  .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--steel-2); border:1px solid var(--hivis-dim); color:var(--paper); padding:10px 16px; border-radius:10px; font-size:13px; display:flex; gap:10px; align-items:center; z-index:60; white-space:nowrap; }
-  .toast button{ background:none; border:none; color:var(--hivis); font-weight:700; cursor:pointer; }
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--steel2);border:1px solid var(--hivis-d);color:var(--paper);padding:10px 16px;border-radius:10px;font-size:13px;display:flex;gap:10px;align-items:center;z-index:60;white-space:nowrap;}
+.toast[hidden]{display:none;}
+.toast button{background:none;border:none;color:var(--hivis);font-weight:700;cursor:pointer;}
 
-  .section-title{ font-family:'Oswald',sans-serif; font-size:11px; letter-spacing:0.1em; color:var(--paper-dim); margin:0 0 8px; }
-  hr.sep{ border:none; border-top:1px solid var(--line); margin:16px 0; }
+button:focus-visible,input:focus-visible{outline:2px solid var(--hivis);outline-offset:2px;}
 </style>
 </head>
 <body>
 <div class="app">
+
   <header class="topbar">
-    <h1>LA FICHADA<span class="dot">.</span></h1>
-    <button id="btn-settings" aria-label="Configuración">⚙</button>
+    <h1>LA FICHADA<span>.</span></h1>
+    <button id="btn-cfg" aria-label="Configuracion">&#9881;</button>
   </header>
 
-  <section class="punch-wrap">
-    <button id="punch-btn" class="punch" aria-live="polite">
-      <span class="punch-stamp" id="punch-stamp"></span>
-      <span class="punch-label" id="punch-label">INICIAR<br>TURNO</span>
-      <span class="punch-timer" id="punch-timer" hidden>00:00:00</span>
-    </button>
-    <p class="punch-sub" id="punch-sub">Tarifa: $0 / hora</p>
-  </section>
+  <!-- ENTRADA / SALIDA -->
+  <div class="punch-row">
+    <button class="punch-btn" id="btn-entrada">ENTRADA</button>
+    <button class="punch-btn" id="btn-salida" disabled>SALIDA</button>
+  </div>
 
+  <!-- TIMER -->
+  <div class="timer-row">
+    <div id="timer-display">00:00:00</div>
+    <div id="timer-sub">Tarifa: $0 / hora</div>
+  </div>
+
+  <!-- STATS -->
   <section class="stats">
     <div class="stat-card">
       <span class="stat-label">HOY</span>
-      <span class="stat-value" id="stat-today-money">$0</span>
-      <span class="stat-sub" id="stat-today-hours">0h 0m</span>
+      <span class="stat-money" id="s-hoy-m">$0</span>
+      <span class="stat-hours" id="s-hoy-h">0h 0m</span>
     </div>
     <div class="stat-card">
       <span class="stat-label">SEMANA</span>
-      <span class="stat-value" id="stat-week-money">$0</span>
-      <span class="stat-sub" id="stat-week-hours">0h 0m</span>
+      <span class="stat-money" id="s-sem-m">$0</span>
+      <span class="stat-hours" id="s-sem-h">0h 0m</span>
     </div>
     <div class="stat-card">
       <span class="stat-label">MES</span>
-      <span class="stat-value" id="stat-month-money">$0</span>
-      <span class="stat-sub" id="stat-month-hours">0h 0m</span>
+      <span class="stat-money" id="s-mes-m">$0</span>
+      <span class="stat-hours" id="s-mes-h">0h 0m</span>
     </div>
   </section>
 
-  <nav class="segmented">
-    <button class="seg active" data-view="turnos">Turnos</button>
-    <button class="seg" data-view="adelantos">Adelantos</button>
-    <button class="seg" data-view="feriados">Feriados</button>
+  <!-- TABS -->
+  <nav class="tabs">
+    <button class="tab on" data-v="turnos">Turnos</button>
+    <button class="tab" data-v="adelantos">Adelantos</button>
+    <button class="tab" data-v="feriados">Feriados</button>
   </nav>
 
-  <section id="view-turnos" class="view active">
-    <button class="add-link" id="btn-add-shift">+ Agregar turno manual</button>
-    <button class="btn-excel" id="btn-excel-report">📊 Reporte Excel del mes</button>
-    <ul class="ledger" id="list-shifts"></ul>
+  <!-- TURNOS -->
+  <section id="view-turnos" class="view on">
+    <button class="btn-add" id="btn-manual">+ Agregar turno manual</button>
+    <button class="btn-excel" id="btn-excel">&#128202; Reporte Excel del mes</button>
+    <ul class="ledger" id="list-turnos"></ul>
   </section>
 
+  <!-- ADELANTOS -->
   <section id="view-adelantos" class="view">
-    <form class="inline-form" id="form-advance">
-      <div class="field" style="flex-basis:100%;">
-        <label for="adv-amount">Monto</label>
-        <input id="adv-amount" type="number" inputmode="decimal" placeholder="0" required min="0">
+    <div class="iform">
+      <div class="ifield" style="flex-basis:100%">
+        <label for="adv-m">Monto ($)</label>
+        <input id="adv-m" type="number" inputmode="decimal" placeholder="0" min="0">
       </div>
-      <div class="field" style="flex-basis:100%;">
-        <label for="adv-note">Nota (opcional)</label>
-        <input id="adv-note" type="text" placeholder="Ej: adelanto de la semana">
+      <div class="ifield" style="flex-basis:100%">
+        <label for="adv-n">Nota (opcional)</label>
+        <input id="adv-n" type="text" placeholder="Ej: quincena">
       </div>
-      <div class="field" style="flex-basis:100%;">
-        <label for="adv-date">Fecha</label>
-        <input id="adv-date" type="date">
+      <div class="ifield" style="flex-basis:100%">
+        <label for="adv-f">Fecha</label>
+        <input id="adv-f" type="date">
       </div>
-      <button type="submit" style="flex-basis:100%;">Registrar adelanto</button>
-    </form>
-    <p class="net-line">
+      <button class="ibtn" id="btn-adv" style="flex-basis:100%">Registrar adelanto</button>
+    </div>
+    <div class="net-bar">
       <span>Neto a cobrar este mes</span>
-      <span class="amt" id="net-mes">$0</span>
-    </p>
-    <ul class="ledger" id="list-advances" style="margin-top:14px;"></ul>
+      <span class="amt" id="neto-mes">$0</span>
+    </div>
+    <ul class="ledger" id="list-adv"></ul>
   </section>
 
+  <!-- FERIADOS -->
   <section id="view-feriados" class="view">
-    <form class="inline-form" id="form-holiday">
-      <div class="field" style="flex-basis:100%;">
-        <label for="hol-date">Fecha</label>
-        <input id="hol-date" type="date" required>
+    <div class="iform">
+      <div class="ifield" style="flex-basis:100%">
+        <label for="hol-f">Fecha</label>
+        <input id="hol-f" type="date">
       </div>
-      <div class="field" style="flex-basis:100%;">
-        <label for="hol-note">Nota (opcional)</label>
-        <input id="hol-note" type="text" placeholder="Ej: feriado nacional">
+      <div class="ifield" style="flex-basis:100%">
+        <label for="hol-n">Nota (opcional)</label>
+        <input id="hol-n" type="text" placeholder="Ej: feriado nacional">
       </div>
-      <button type="submit" style="flex-basis:100%;">Marcar feriado</button>
-    </form>
-    <p class="net-line">
+      <button class="ibtn" id="btn-hol" style="flex-basis:100%">Marcar feriado</button>
+    </div>
+    <div class="net-bar">
       <span>Feriados este mes</span>
-      <span class="amt" id="hol-count-mes">0</span>
-    </p>
-    <ul class="ledger" id="list-holidays" style="margin-top:14px;"></ul>
+      <span class="amt" id="hol-count">0</span>
+    </div>
+    <ul class="ledger" id="list-hol"></ul>
   </section>
-</div>
 
-<!-- MODAL SETTINGS -->
-<div class="modal" id="modal-settings" hidden>
-  <div class="modal-card">
-    <h2>CONFIGURACIÓN</h2>
-    <label for="set-tarifa">Tarifa por hora ($)</label>
-    <input id="set-tarifa" type="number" inputmode="decimal" min="0" placeholder="0">
-    <div class="modal-actions">
-      <button class="btn-cancel" id="set-cancel">Cancelar</button>
-      <button class="btn-save" id="set-save">Guardar</button>
+</div><!-- /app -->
+
+<!-- MODAL CONFIG -->
+<div class="modal" id="modal-cfg" hidden>
+  <div class="mcard">
+    <h2>CONFIGURACION</h2>
+    <label for="cfg-tarifa">Tarifa por hora ($)</label>
+    <input id="cfg-tarifa" type="number" inputmode="decimal" min="0" placeholder="0">
+    <div class="mrow">
+      <button class="mbtn-cancel" id="cfg-cancel">Cancelar</button>
+      <button class="mbtn-ok"     id="cfg-save">Guardar</button>
     </div>
     <hr class="sep">
-    <p class="section-title">COPIA DE SEGURIDAD</p>
-    <div class="modal-actions" style="margin-top:6px;">
-      <button class="btn-cancel" id="btn-export">⬇ Backup JSON</button>
-      <button class="btn-cancel" id="btn-import-trigger">⬆ Restaurar</button>
+    <span class="sec-lbl">COPIA DE SEGURIDAD</span>
+    <div class="mrow" style="margin-top:0">
+      <button class="mbtn-cancel" id="btn-export">&#11015; Backup</button>
+      <button class="mbtn-cancel" id="btn-import-trig">&#11014; Restaurar</button>
     </div>
     <input type="file" id="file-import" accept="application/json" hidden>
-    <p style="font-size:11px; color:var(--paper-dim); margin:10px 0 0;">Restaurar reemplaza todos los datos actuales.</p>
+    <p style="font-size:11px;color:var(--dim);margin-top:10px;">Restaurar reemplaza todos los datos actuales.</p>
   </div>
 </div>
 
 <!-- MODAL TURNO MANUAL -->
-<div class="modal" id="modal-shift" hidden>
-  <div class="modal-card">
+<div class="modal" id="modal-manual" hidden>
+  <div class="mcard">
     <h2>TURNO MANUAL</h2>
-    <label for="ms-date">Fecha</label>
-    <input id="ms-date" type="date">
-    <label for="ms-start">Hora inicio</label>
-    <input id="ms-start" type="time">
-    <label for="ms-end">Hora fin</label>
-    <input id="ms-end" type="time">
-    <div class="modal-actions">
-      <button class="btn-cancel" id="ms-cancel">Cancelar</button>
-      <button class="btn-save" id="ms-save">Guardar</button>
+    <label for="mm-f">Fecha</label>
+    <input id="mm-f" type="date">
+    <label for="mm-ini">Hora entrada</label>
+    <input id="mm-ini" type="time">
+    <label for="mm-fin">Hora salida</label>
+    <input id="mm-fin" type="time">
+    <div class="mrow">
+      <button class="mbtn-cancel" id="mm-cancel">Cancelar</button>
+      <button class="mbtn-ok"     id="mm-save">Guardar</button>
     </div>
   </div>
 </div>
 
+<!-- TOAST -->
 <div class="toast" id="toast" hidden>
   <span id="toast-msg"></span>
   <button id="toast-undo">Deshacer</button>
 </div>
 
 <script>
-(function(){
-  const STORAGE_KEY = 'fichada-data-v2';
-  const DEFAULT_STATE = { tarifaHora: 0, shifts: [], advances: [], holidays: [] };
-  let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-  let pendingUndo = null;
-  let toastTimer = null;
-  let tickTimer = null;
+(function() {
+'use strict';
 
-  // ---------- localStorage ----------
-  function loadState(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){ state = Object.assign({}, DEFAULT_STATE, JSON.parse(raw)); }
-    }catch(e){}
-  }
-  function saveState(){
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-    catch(e){ console.error('No se pudo guardar', e); }
-  }
+var KEY = 'fichada-v3';
+var state = { tarifa: 0, turnos: [], adelantos: [], feriados: [] };
+var undo = null;
+var toastT = null;
+var tickT  = null;
 
-  // ---------- helpers ----------
-  function pad(n){ return String(n).padStart(2,'0'); }
-  function dateKey(d){ const x=new Date(d); return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`; }
-  function todayKey(){ return dateKey(new Date()); }
-  function getWeekStart(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
-  function isSameDayKey(iso,key){ return dateKey(iso)===key; }
-  function isSameWeek(iso,ref){ return getWeekStart(iso).getTime()===getWeekStart(ref).getTime(); }
-  function isSameMonth(iso,ref){ const a=new Date(iso),b=new Date(ref); return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth(); }
-  function fmtMoney(n){ return '$'+Math.round(n||0).toLocaleString('es-AR'); }
-  function fmtHM(totalMinutes){ const h=Math.floor(totalMinutes/60),m=Math.round(totalMinutes%60); return `${h}h ${m}m`; }
-  function fmtClock(ms){ const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60; return `${pad(h)}:${pad(m)}:${pad(sec)}`; }
-  function fmtDateShort(iso){ return new Date(iso).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}); }
-  function monthName(d){ return new Date(d).toLocaleDateString('es-AR',{month:'long',year:'numeric'}); }
-
-  // ---------- punch ----------
-  const punchBtn = document.getElementById('punch-btn');
-  const punchLabel = document.getElementById('punch-label');
-  const punchTimer = document.getElementById('punch-timer');
-  const punchStamp = document.getElementById('punch-stamp');
-  const punchSub = document.getElementById('punch-sub');
-
-  function activeShift(){ return state.shifts.find(s=>!s.end); }
-
-  function startTick(){
-    if(tickTimer) clearInterval(tickTimer);
-    tickTimer = setInterval(()=>{
-      const active = activeShift();
-      if(active) punchTimer.textContent = fmtClock(Date.now()-new Date(active.start).getTime());
-    }, 1000);
-  }
-
-  function refreshPunchUI(){
-    const active = activeShift();
-    if(active){
-      punchBtn.classList.add('active');
-      punchLabel.innerHTML = 'FINALIZAR<br>TURNO';
-      punchTimer.hidden = false;
-      punchTimer.textContent = fmtClock(Date.now()-new Date(active.start).getTime());
-      startTick();
-    } else {
-      punchBtn.classList.remove('active');
-      punchLabel.innerHTML = 'INICIAR<br>TURNO';
-      punchTimer.hidden = true;
-      if(tickTimer){ clearInterval(tickTimer); tickTimer=null; }
+/* ── storage ─────────────────────────────────────── */
+function load() {
+  try {
+    var r = localStorage.getItem(KEY);
+    if (r) {
+      var p = JSON.parse(r);
+      state.tarifa    = p.tarifa    || 0;
+      state.turnos    = Array.isArray(p.turnos)    ? p.turnos    : [];
+      state.adelantos = Array.isArray(p.adelantos) ? p.adelantos : [];
+      state.feriados  = Array.isArray(p.feriados)  ? p.feriados  : [];
     }
-    punchSub.textContent = `Tarifa: ${fmtMoney(state.tarifaHora)} / hora`;
-  }
+  } catch(e) {}
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {}
+}
 
-  // Cuando la app vuelve al primer plano, recalculamos el timer desde el start guardado
-  document.addEventListener('visibilitychange', ()=>{
-    if(document.visibilityState === 'visible'){
-      const active = activeShift();
-      if(active){
-        punchTimer.textContent = fmtClock(Date.now()-new Date(active.start).getTime());
-        startTick();
-      }
+/* ── helpers ─────────────────────────────────────── */
+function pad(n) { return n < 10 ? '0'+n : ''+n; }
+function dkey(d) { var x=new Date(d); return x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate()); }
+function today() { return dkey(new Date()); }
+function weekStart(d) {
+  var x=new Date(d); var wd=(x.getDay()+6)%7;
+  x.setDate(x.getDate()-wd); x.setHours(0,0,0,0); return x;
+}
+function sameDay(iso)   { return dkey(iso)===today(); }
+function sameWeek(iso)  { return weekStart(iso).getTime()===weekStart(new Date()).getTime(); }
+function sameMonth(iso) {
+  var a=new Date(iso),b=new Date();
+  return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth();
+}
+function fmtMoney(n) { return '$'+Math.round(n||0).toLocaleString('es-AR'); }
+function fmtHM(m)    { return Math.floor(m/60)+'h '+Math.round(m%60)+'m'; }
+function fmtClock(ms) {
+  var s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  return pad(h)+':'+pad(m)+':'+pad(sec);
+}
+function fmtShort(iso) { return new Date(iso).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}); }
+function fmtTime(iso)  { return new Date(iso).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); }
+function genId()       { return 'id'+Date.now()+'_'+Math.floor(Math.random()*10000); }
+
+/* ── turno activo ────────────────────────────────── */
+function turnoAbierto() {
+  for (var i=0;i<state.turnos.length;i++) {
+    if (!state.turnos[i].fin) return state.turnos[i];
+  }
+  return null;
+}
+
+/* ── botones entrada / salida ────────────────────── */
+var btnE = document.getElementById('btn-entrada');
+var btnS = document.getElementById('btn-salida');
+var disp = document.getElementById('timer-display');
+var sub  = document.getElementById('timer-sub');
+
+function refreshButtons() {
+  var ta = turnoAbierto();
+  if (ta) {
+    btnE.classList.add('active');
+    btnE.disabled = true;
+    btnS.classList.add('ready');
+    btnS.disabled = false;
+    startTick(ta);
+  } else {
+    btnE.classList.remove('active');
+    btnE.disabled = false;
+    btnS.classList.remove('ready');
+    btnS.disabled = true;
+    if (tickT) { clearInterval(tickT); tickT=null; }
+    disp.textContent = '00:00:00';
+  }
+  sub.textContent = 'Tarifa: '+fmtMoney(state.tarifa)+' / hora';
+}
+
+function startTick(turno) {
+  if (tickT) clearInterval(tickT);
+  tickT = setInterval(function() {
+    disp.textContent = fmtClock(Date.now()-new Date(turno.inicio).getTime());
+  }, 1000);
+  disp.textContent = fmtClock(Date.now()-new Date(turno.inicio).getTime());
+}
+
+/* visibilitychange: recalcula el timer cuando vuelve al frente */
+document.addEventListener('visibilitychange', function() {
+  var ta = turnoAbierto();
+  if (document.visibilityState==='visible' && ta) {
+    startTick(ta);
+  } else if (tickT) {
+    clearInterval(tickT); tickT=null;
+  }
+});
+
+btnE.addEventListener('click', function() {
+  if (turnoAbierto()) return;
+  state.turnos.push({ id:genId(), inicio:new Date().toISOString(), fin:null, durMin:0, ganancia:0 });
+  save(); refreshButtons(); renderAll();
+});
+
+btnS.addEventListener('click', function() {
+  var ta = turnoAbierto();
+  if (!ta) return;
+  ta.fin = new Date().toISOString();
+  ta.durMin   = (new Date(ta.fin)-new Date(ta.inicio))/60000;
+  ta.ganancia = (ta.durMin/60)*state.tarifa;
+  save(); refreshButtons(); renderAll();
+  toast('Turno cerrado · '+fmtHM(ta.durMin)+' · '+fmtMoney(ta.ganancia), true);
+});
+
+/* ── stats ───────────────────────────────────────── */
+function calcRange(filterFn) {
+  var mins=0, money=0;
+  for (var i=0;i<state.turnos.length;i++) {
+    var t=state.turnos[i];
+    if (!t.fin) continue;
+    if (filterFn(t.inicio)) { mins+=t.durMin; money+=t.ganancia; }
+  }
+  return {mins:mins,money:money};
+}
+
+function renderStats() {
+  var now = new Date();
+  var hoy = calcRange(sameDay);
+  var sem = calcRange(sameWeek);
+  var mes = calcRange(sameMonth);
+
+  document.getElementById('s-hoy-m').textContent = fmtMoney(hoy.money);
+  document.getElementById('s-hoy-h').textContent = fmtHM(hoy.mins);
+  document.getElementById('s-sem-m').textContent = fmtMoney(sem.money);
+  document.getElementById('s-sem-h').textContent = fmtHM(sem.mins);
+  document.getElementById('s-mes-m').textContent = fmtMoney(mes.money);
+  document.getElementById('s-mes-h').textContent = fmtHM(mes.mins);
+
+  var advMes = 0;
+  for (var j=0;j<state.adelantos.length;j++) {
+    if (sameMonth(state.adelantos[j].fecha)) advMes += Number(state.adelantos[j].monto);
+  }
+  var neto = mes.money - advMes;
+  var netoEl = document.getElementById('neto-mes');
+  netoEl.textContent = fmtMoney(neto);
+  netoEl.style.color = neto<0 ? 'var(--rust)' : 'var(--moss)';
+
+  var holCnt = 0;
+  for (var k=0;k<state.feriados.length;k++) {
+    if (sameMonth(state.feriados[k].fecha)) holCnt++;
+  }
+  document.getElementById('hol-count').textContent = holCnt;
+}
+
+/* ── listas ──────────────────────────────────────── */
+function mkEl(tag,cls,txt) {
+  var el=document.createElement(tag);
+  if(cls) el.className=cls;
+  if(txt!==undefined) el.textContent=txt;
+  return el;
+}
+
+function delBtn(col, id) {
+  var b=mkEl('button','del-btn','\u2715');
+  b.setAttribute('aria-label','Eliminar');
+  (function(c,i){b.addEventListener('click',function(){delItem(c,i);});})(col,id);
+  return b;
+}
+
+function emptyRow(ul, msg) {
+  var li=mkEl('li'); li.style.display='block';
+  li.className='empty'; li.textContent=msg;
+  ul.appendChild(li);
+}
+
+function renderTurnos() {
+  var ul=document.getElementById('list-turnos');
+  ul.innerHTML='';
+  var sorted=state.turnos.slice().sort(function(a,b){return new Date(b.inicio)-new Date(a.inicio);});
+  if (!sorted.length) { emptyRow(ul,'Todavia no hay turnos.'); return; }
+  sorted.forEach(function(t) {
+    var li=mkEl('li');
+    var main=mkEl('div','led-main');
+    main.appendChild(mkEl('span','led-date',fmtShort(t.inicio)));
+    var desc;
+    if (!t.fin) {
+      desc = 'En curso...';
     } else {
-      // Al ir al fondo, pausamos el interval (ahorra batería)
-      if(tickTimer){ clearInterval(tickTimer); tickTimer=null; }
+      desc = fmtTime(t.inicio)+' \u2013 '+fmtTime(t.fin)+' \u00b7 '+fmtHM(t.durMin);
     }
+    main.appendChild(mkEl('span','led-desc',desc));
+    li.appendChild(main);
+    li.appendChild(mkEl('span','led-amt pos', t.fin?fmtMoney(t.ganancia):'\u2014'));
+    li.appendChild(delBtn('turnos',t.id));
+    ul.appendChild(li);
   });
+}
 
-  punchBtn.addEventListener('click', ()=>{
-    punchStamp.classList.remove('fire');
-    requestAnimationFrame(()=>punchStamp.classList.add('fire'));
-    const active = activeShift();
-    if(active){
-      active.end = new Date().toISOString();
-      active.durationMin = (new Date(active.end)-new Date(active.start))/60000;
-      active.earning = (active.durationMin/60)*state.tarifaHora;
-    } else {
-      state.shifts.push({ id:'sh_'+Date.now(), start:new Date().toISOString(), end:null, durationMin:0, earning:0 });
-    }
-    saveState();
-    refreshPunchUI();
-    renderAll();
+function renderAdelantos() {
+  var ul=document.getElementById('list-adv');
+  ul.innerHTML='';
+  var sorted=state.adelantos.slice().sort(function(a,b){return new Date(b.fecha)-new Date(a.fecha);});
+  if (!sorted.length) { emptyRow(ul,'No hay adelantos.'); return; }
+  sorted.forEach(function(a) {
+    var li=mkEl('li');
+    var main=mkEl('div','led-main');
+    main.appendChild(mkEl('span','led-date',fmtShort(a.fecha)));
+    main.appendChild(mkEl('span','led-desc',a.nota||'Adelanto'));
+    li.appendChild(main);
+    li.appendChild(mkEl('span','led-amt neg','\u2212'+fmtMoney(a.monto)));
+    li.appendChild(delBtn('adelantos',a.id));
+    ul.appendChild(li);
   });
+}
 
-  // ---------- stats ----------
-  function computeRange(filterFn){
-    let mins=0, money=0;
-    state.shifts.forEach(s=>{ if(!s.end) return; if(filterFn(s.start)){ mins+=s.durationMin; money+=s.earning; } });
-    return { mins, money };
-  }
+function renderFeriados() {
+  var ul=document.getElementById('list-hol');
+  ul.innerHTML='';
+  var sorted=state.feriados.slice().sort(function(a,b){return new Date(b.fecha)-new Date(a.fecha);});
+  if (!sorted.length) { emptyRow(ul,'No hay feriados.'); return; }
+  sorted.forEach(function(f) {
+    var li=mkEl('li');
+    var main=mkEl('div','led-main');
+    main.appendChild(mkEl('span','led-date',fmtShort(f.fecha)));
+    main.appendChild(mkEl('span','led-desc',f.nota||'Feriado'));
+    li.appendChild(main);
+    li.appendChild(delBtn('feriados',f.id));
+    ul.appendChild(li);
+  });
+}
 
-  function renderStats(){
-    const now = new Date();
-    const today = computeRange(iso=>isSameDayKey(iso,todayKey()));
-    const week  = computeRange(iso=>isSameWeek(iso,now));
-    const month = computeRange(iso=>isSameMonth(iso,now));
-    document.getElementById('stat-today-money').textContent = fmtMoney(today.money);
-    document.getElementById('stat-today-hours').textContent = fmtHM(today.mins);
-    document.getElementById('stat-week-money').textContent  = fmtMoney(week.money);
-    document.getElementById('stat-week-hours').textContent  = fmtHM(week.mins);
-    document.getElementById('stat-month-money').textContent = fmtMoney(month.money);
-    document.getElementById('stat-month-hours').textContent = fmtHM(month.mins);
-    const advMonth = state.advances.filter(a=>isSameMonth(a.date,now)).reduce((s,a)=>s+Number(a.amount),0);
-    const net = month.money - advMonth;
-    const netEl = document.getElementById('net-mes');
-    netEl.textContent = fmtMoney(net);
-    netEl.style.color = net<0 ? 'var(--rust)' : 'var(--moss)';
-    document.getElementById('hol-count-mes').textContent = state.holidays.filter(h=>isSameMonth(h.date,now)).length;
-  }
+function renderAll() { renderStats(); renderTurnos(); renderAdelantos(); renderFeriados(); }
 
-  // ---------- lists ----------
-  function renderShifts(){
-    const ul = document.getElementById('list-shifts');
-    ul.innerHTML = '';
-    const sorted = [...state.shifts].sort((a,b)=>new Date(b.start)-new Date(a.start));
-    if(!sorted.length){ ul.innerHTML='<li class="empty-row" style="display:block;">Todavía no hay turnos registrados.</li>'; return; }
-    sorted.forEach(s=>{
-      const li=document.createElement('li');
-      const main=document.createElement('div'); main.className='led-main';
-      const dateEl=document.createElement('span'); dateEl.className='led-date'; dateEl.textContent=fmtDateShort(s.start);
-      const descEl=document.createElement('span'); descEl.className='led-desc';
-      if(!s.end){ descEl.textContent='En curso…'; }
-      else{
-        const st=new Date(s.start).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-        const en=new Date(s.end).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-        descEl.textContent=`${st} – ${en} · ${fmtHM(s.durationMin)}`;
-      }
-      main.appendChild(dateEl); main.appendChild(descEl);
-      const amt=document.createElement('span'); amt.className='led-amount pos'; amt.textContent=s.end?fmtMoney(s.earning):'—';
-      const del=document.createElement('button'); del.className='led-del'; del.setAttribute('aria-label','Eliminar turno'); del.textContent='✕';
-      del.addEventListener('click',()=>deleteItem('shifts',s.id));
-      li.appendChild(main); li.appendChild(amt); li.appendChild(del);
-      ul.appendChild(li);
+/* ── eliminar + undo ─────────────────────────────── */
+function delItem(col, id) {
+  var arr=state[col];
+  var idx=-1;
+  for (var i=0;i<arr.length;i++) { if(arr[i].id===id){idx=i;break;} }
+  if (idx===-1) return;
+  var removed=arr.splice(idx,1)[0];
+  undo={col:col,item:removed,idx:idx};
+  save(); renderAll(); toast('Eliminado',false);
+}
+
+/* ── tabs ────────────────────────────────────────── */
+var tabBtns=document.querySelectorAll('.tab');
+for (var ti=0;ti<tabBtns.length;ti++) {
+  (function(btn){
+    btn.addEventListener('click',function(){
+      for(var i=0;i<tabBtns.length;i++) tabBtns[i].classList.remove('on');
+      var views=document.querySelectorAll('.view');
+      for(var j=0;j<views.length;j++) views[j].classList.remove('on');
+      btn.classList.add('on');
+      document.getElementById('view-'+btn.getAttribute('data-v')).classList.add('on');
     });
-  }
+  })(tabBtns[ti]);
+}
 
-  function renderAdvances(){
-    const ul = document.getElementById('list-advances');
-    ul.innerHTML = '';
-    const sorted = [...state.advances].sort((a,b)=>new Date(b.date)-new Date(a.date));
-    if(!sorted.length){ ul.innerHTML='<li class="empty-row" style="display:block;">No hay adelantos registrados.</li>'; return; }
-    sorted.forEach(a=>{
-      const li=document.createElement('li');
-      const main=document.createElement('div'); main.className='led-main';
-      const dateEl=document.createElement('span'); dateEl.className='led-date'; dateEl.textContent=fmtDateShort(a.date);
-      const descEl=document.createElement('span'); descEl.className='led-desc'; descEl.textContent=a.note||'Adelanto';
-      main.appendChild(dateEl); main.appendChild(descEl);
-      const amt=document.createElement('span'); amt.className='led-amount neg'; amt.textContent='−'+fmtMoney(a.amount);
-      const del=document.createElement('button'); del.className='led-del'; del.setAttribute('aria-label','Eliminar adelanto'); del.textContent='✕';
-      del.addEventListener('click',()=>deleteItem('advances',a.id));
-      li.appendChild(main); li.appendChild(amt); li.appendChild(del);
-      ul.appendChild(li);
-    });
-  }
+/* ── adelantos form ──────────────────────────────── */
+document.getElementById('btn-adv').addEventListener('click', function() {
+  var m=Number(document.getElementById('adv-m').value);
+  if (!m||m<=0) { toast('Ingresa un monto valido',true); return; }
+  var n=document.getElementById('adv-n').value;
+  var f=document.getElementById('adv-f').value||today();
+  state.adelantos.push({id:genId(),fecha:new Date(f+'T12:00:00').toISOString(),monto:m,nota:n});
+  save();
+  document.getElementById('adv-m').value='';
+  document.getElementById('adv-n').value='';
+  renderAll();
+});
 
-  function renderHolidays(){
-    const ul = document.getElementById('list-holidays');
-    ul.innerHTML = '';
-    const sorted = [...state.holidays].sort((a,b)=>new Date(b.date)-new Date(a.date));
-    if(!sorted.length){ ul.innerHTML='<li class="empty-row" style="display:block;">No hay feriados marcados.</li>'; return; }
-    sorted.forEach(h=>{
-      const li=document.createElement('li');
-      const main=document.createElement('div'); main.className='led-main';
-      const dateEl=document.createElement('span'); dateEl.className='led-date'; dateEl.textContent=fmtDateShort(h.date);
-      const descEl=document.createElement('span'); descEl.className='led-desc'; descEl.textContent=h.note||'Feriado';
-      main.appendChild(dateEl); main.appendChild(descEl);
-      const del=document.createElement('button'); del.className='led-del'; del.setAttribute('aria-label','Eliminar feriado'); del.textContent='✕';
-      del.addEventListener('click',()=>deleteItem('holidays',h.id));
-      li.appendChild(main); li.appendChild(del);
-      ul.appendChild(li);
-    });
-  }
+/* ── feriados form ───────────────────────────────── */
+document.getElementById('btn-hol').addEventListener('click', function() {
+  var f=document.getElementById('hol-f').value;
+  if (!f) { toast('Selecciona una fecha',true); return; }
+  var n=document.getElementById('hol-n').value;
+  state.feriados.push({id:genId(),fecha:new Date(f+'T12:00:00').toISOString(),nota:n});
+  save();
+  document.getElementById('hol-f').value='';
+  document.getElementById('hol-n').value='';
+  renderAll();
+});
 
-  function renderAll(){ renderStats(); renderShifts(); renderAdvances(); renderHolidays(); }
+/* ── modal config ────────────────────────────────── */
+var mCfg=document.getElementById('modal-cfg');
+document.getElementById('btn-cfg').addEventListener('click',function(){
+  document.getElementById('cfg-tarifa').value=state.tarifa||'';
+  mCfg.hidden=false;
+});
+document.getElementById('cfg-cancel').addEventListener('click',function(){mCfg.hidden=true;});
+document.getElementById('cfg-save').addEventListener('click',function(){
+  state.tarifa=Number(document.getElementById('cfg-tarifa').value)||0;
+  save(); mCfg.hidden=true; refreshButtons(); renderAll();
+});
 
-  // ---------- delete + undo ----------
-  function deleteItem(collection, id){
-    const arr=state[collection], idx=arr.findIndex(x=>x.id===id);
-    if(idx===-1) return;
-    const [removed]=arr.splice(idx,1);
-    pendingUndo={collection,item:removed,idx};
-    saveState(); renderAll(); showToast('Eliminado');
-  }
+/* ── backup ──────────────────────────────────────── */
+document.getElementById('btn-export').addEventListener('click',function(){
+  try {
+    var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url; a.download='fichada-backup-'+today()+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url); toast('Backup descargado',true);
+  } catch(e){toast('Error al exportar',true);}
+});
+var fImport=document.getElementById('file-import');
+document.getElementById('btn-import-trig').addEventListener('click',function(){fImport.click();});
+fImport.addEventListener('change',function(e){
+  var file=e.target.files[0]; if(!file) return;
+  var r=new FileReader();
+  r.onload=function(ev){
+    try {
+      var p=JSON.parse(ev.target.result);
+      if (!p||!Array.isArray(p.turnos)) throw new Error();
+      state={tarifa:p.tarifa||0,turnos:p.turnos,adelantos:p.adelantos||[],feriados:p.feriados||[]};
+      save(); mCfg.hidden=true; refreshButtons(); renderAll();
+      toast('Backup restaurado',true);
+    } catch(err){toast('Archivo invalido',true);}
+  };
+  r.readAsText(file); fImport.value='';
+});
 
-  function showToast(msg, hideUndo=false){
-    const toast=document.getElementById('toast');
-    document.getElementById('toast-msg').textContent=msg;
-    document.getElementById('toast-undo').style.display=hideUndo?'none':'';
-    toast.hidden=false;
-    clearTimeout(toastTimer);
-    toastTimer=setTimeout(()=>{ toast.hidden=true; pendingUndo=null; },4000);
-  }
-  document.getElementById('toast-undo').addEventListener('click',()=>{
-    if(pendingUndo){ state[pendingUndo.collection].splice(pendingUndo.idx,0,pendingUndo.item); saveState(); renderAll(); }
-    document.getElementById('toast').hidden=true; pendingUndo=null;
+/* ── turno manual ────────────────────────────────── */
+var mManual=document.getElementById('modal-manual');
+document.getElementById('btn-manual').addEventListener('click',function(){
+  document.getElementById('mm-f').value=today();
+  document.getElementById('mm-ini').value='';
+  document.getElementById('mm-fin').value='';
+  mManual.hidden=false;
+});
+document.getElementById('mm-cancel').addEventListener('click',function(){mManual.hidden=true;});
+document.getElementById('mm-save').addEventListener('click',function(){
+  var f=document.getElementById('mm-f').value;
+  var hi=document.getElementById('mm-ini').value;
+  var hf=document.getElementById('mm-fin').value;
+  if (!f||!hi||!hf){toast('Completa todos los campos',true);return;}
+  var ini=new Date(f+'T'+hi+':00');
+  var fin=new Date(f+'T'+hf+':00');
+  if (fin<=ini){toast('La salida debe ser posterior a la entrada',true);return;}
+  var dur=(fin-ini)/60000;
+  state.turnos.push({id:genId(),inicio:ini.toISOString(),fin:fin.toISOString(),durMin:dur,ganancia:(dur/60)*state.tarifa});
+  save(); mManual.hidden=true; renderAll();
+});
+
+/* ── Excel ───────────────────────────────────────── */
+document.getElementById('btn-excel').addEventListener('click',function(){
+  if (typeof XLSX==='undefined'){toast('Libreria no cargada, revisa internet',true);return;}
+  var now=new Date();
+  var mes=now.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+  var fname='fichada-'+now.getFullYear()+'-'+pad(now.getMonth()+1)+'.xlsx';
+
+  /* turnos del mes */
+  var tmes=state.turnos.filter(function(t){return t.fin&&sameMonth(t.inicio);});
+  tmes.sort(function(a,b){return new Date(a.inicio)-new Date(b.inicio);});
+  var totMins=0,totGan=0;
+  var wsTurnos=[['Fecha','Entrada','Salida','Duracion (min)','Horas','Ganancia ($)']];
+  tmes.forEach(function(t){
+    totMins+=t.durMin; totGan+=t.ganancia;
+    wsTurnos.push([
+      fmtShort(t.inicio), fmtTime(t.inicio), fmtTime(t.fin),
+      Math.round(t.durMin), parseFloat((t.durMin/60).toFixed(2)), Math.round(t.ganancia)
+    ]);
   });
+  wsTurnos.push([]); wsTurnos.push(['TOTAL','','',Math.round(totMins),parseFloat((totMins/60).toFixed(2)),Math.round(totGan)]);
 
-  // ---------- nav ----------
-  document.querySelectorAll('.seg').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      document.querySelectorAll('.seg').forEach(b=>b.classList.remove('active'));
-      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('view-'+btn.dataset.view).classList.add('active');
-    });
-  });
+  /* adelantos del mes */
+  var ames=state.adelantos.filter(function(a){return sameMonth(a.fecha);});
+  var totAdv=ames.reduce(function(s,a){return s+Number(a.monto);},0);
+  var wsAdv=[['Fecha','Nota','Monto ($)']];
+  ames.forEach(function(a){wsAdv.push([fmtShort(a.fecha),a.nota||'-',Math.round(a.monto)]);});
+  wsAdv.push([]); wsAdv.push(['TOTAL','',Math.round(totAdv)]);
 
-  // ---------- settings ----------
-  const modalSettings=document.getElementById('modal-settings');
-  document.getElementById('btn-settings').addEventListener('click',()=>{ document.getElementById('set-tarifa').value=state.tarifaHora||''; modalSettings.hidden=false; });
-  document.getElementById('set-cancel').addEventListener('click',()=>modalSettings.hidden=true);
-  document.getElementById('set-save').addEventListener('click',()=>{
-    state.tarifaHora=Number(document.getElementById('set-tarifa').value)||0;
-    saveState(); modalSettings.hidden=false; modalSettings.hidden=true; refreshPunchUI(); renderAll();
-  });
+  /* feriados del mes */
+  var fmes=state.feriados.filter(function(f){return sameMonth(f.fecha);});
+  var wsHol=[['Fecha','Nota']];
+  fmes.forEach(function(f){wsHol.push([fmtShort(f.fecha),f.nota||'-']);});
 
-  // ---------- backup ----------
-  document.getElementById('btn-export').addEventListener('click',()=>{
-    const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=`fichada-backup-${todayKey()}.json`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-    showToast('Backup descargado',true);
-  });
-  const fileImport=document.getElementById('file-import');
-  document.getElementById('btn-import-trigger').addEventListener('click',()=>fileImport.click());
-  fileImport.addEventListener('change',(e)=>{
-    const file=e.target.files[0]; if(!file) return;
-    const reader=new FileReader();
-    reader.onload=(ev)=>{
-      try{
-        const parsed=JSON.parse(ev.target.result);
-        if(!parsed||!Array.isArray(parsed.shifts)||!Array.isArray(parsed.advances)||!Array.isArray(parsed.holidays)) throw new Error();
-        state=Object.assign({},DEFAULT_STATE,parsed);
-        saveState(); modalSettings.hidden=true; refreshPunchUI(); renderAll();
-        showToast('Backup restaurado',true);
-      }catch(){ showToast('Archivo inválido',true); }
-    };
-    reader.readAsText(file); fileImport.value='';
-  });
+  /* resumen */
+  var neto=Math.round(totGan-totAdv);
+  var wsRes=[
+    ['Resumen del mes',''],['',''],
+    ['Mes',mes],
+    ['Turnos',tmes.length],
+    ['Total horas',parseFloat((totMins/60).toFixed(2))],
+    ['Tarifa ($/h)',state.tarifa],['',''],
+    ['Ganancia bruta ($)',Math.round(totGan)],
+    ['Adelantos ($)',Math.round(totAdv)],
+    ['Neto a cobrar ($)',neto],['',''],
+    ['Feriados',fmes.length]
+  ];
 
-  // ---------- Excel mensual ----------
-  document.getElementById('btn-excel-report').addEventListener('click',()=>{
-    if(typeof XLSX==='undefined'){ showToast('Cargando librería, intentá de nuevo',true); return; }
-    const now=new Date();
-    const mLabel=now.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
-    const fileName=`fichada-${now.getFullYear()}-${pad(now.getMonth()+1)}.xlsx`;
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsRes),'Resumen');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsTurnos),'Turnos');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsAdv),'Adelantos');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsHol),'Feriados');
+  XLSX.writeFile(wb,fname);
+  toast('Excel descargado',true);
+});
 
-    // ---- hoja turnos ----
-    const shiftsMonth=state.shifts.filter(s=>s.end&&isSameMonth(s.start,now)).sort((a,b)=>new Date(a.start)-new Date(b.start));
-    const wsTurnos=[['Fecha','Hora inicio','Hora fin','Duración (min)','Horas','Ganancia ($)']];
-    shiftsMonth.forEach(s=>{
-      const d=new Date(s.start);
-      wsTurnos.push([
-        d.toLocaleDateString('es-AR'),
-        new Date(s.start).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),
-        new Date(s.end).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),
-        Math.round(s.durationMin),
-        parseFloat((s.durationMin/60).toFixed(2)),
-        Math.round(s.earning)
-      ]);
-    });
-    const totalMins=shiftsMonth.reduce((s,t)=>s+t.durationMin,0);
-    const totalEarn=shiftsMonth.reduce((s,t)=>s+t.earning,0);
-    wsTurnos.push([]);
-    wsTurnos.push(['TOTAL','','',Math.round(totalMins),parseFloat((totalMins/60).toFixed(2)),Math.round(totalEarn)]);
+/* ── toast ───────────────────────────────────────── */
+function toast(msg,hideUndo){
+  var el=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  document.getElementById('toast-undo').style.display=hideUndo?'none':'';
+  el.hidden=false;
+  clearTimeout(toastT);
+  toastT=setTimeout(function(){el.hidden=true;undo=null;},4000);
+}
+document.getElementById('toast-undo').addEventListener('click',function(){
+  if(undo){state[undo.col].splice(undo.idx,0,undo.item);save();renderAll();}
+  document.getElementById('toast').hidden=true;undo=null;
+});
 
-    // ---- hoja adelantos ----
-    const advMonth=state.advances.filter(a=>isSameMonth(a.date,now)).sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const wsAdelantos=[['Fecha','Nota','Monto ($)']];
-    advMonth.forEach(a=> wsAdelantos.push([new Date(a.date).toLocaleDateString('es-AR'), a.note||'—', Math.round(a.amount)]));
-    const totalAdv=advMonth.reduce((s,a)=>s+Number(a.amount),0);
-    wsAdelantos.push([]);
-    wsAdelantos.push(['TOTAL','',Math.round(totalAdv)]);
+/* ── service worker ──────────────────────────────── */
+if ('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')) {
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
 
-    // ---- hoja feriados ----
-    const holMonth=state.holidays.filter(h=>isSameMonth(h.date,now)).sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const wsFeriados=[['Fecha','Nota']];
-    holMonth.forEach(h=> wsFeriados.push([new Date(h.date).toLocaleDateString('es-AR'), h.note||'—']));
-
-    // ---- hoja resumen ----
-    const neto=Math.round(totalEarn-totalAdv);
-    const wsResumen=[
-      ['Resumen del mes',''],
-      ['',''],
-      ['Mes',mLabel],
-      ['Turnos trabajados',shiftsMonth.length],
-      ['Total horas',parseFloat((totalMins/60).toFixed(2))],
-      ['Tarifa por hora ($)',state.tarifaHora],
-      ['',''],
-      ['Ganancia bruta ($)',Math.round(totalEarn)],
-      ['Adelantos ($)',Math.round(totalAdv)],
-      ['Neto a cobrar ($)',neto],
-      ['',''],
-      ['Feriados marcados',holMonth.length],
-    ];
-
-    const wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsResumen),  'Resumen');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsTurnos),   'Turnos');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsAdelantos),'Adelantos');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsFeriados), 'Feriados');
-    XLSX.writeFile(wb, fileName);
-    showToast('Excel descargado',true);
-  });
-
-  // ---------- turno manual ----------
-  const modalShift=document.getElementById('modal-shift');
-  document.getElementById('btn-add-shift').addEventListener('click',()=>{
-    document.getElementById('ms-date').value=dateKey(new Date());
-    document.getElementById('ms-start').value=''; document.getElementById('ms-end').value='';
-    modalShift.hidden=false;
-  });
-  document.getElementById('ms-cancel').addEventListener('click',()=>modalShift.hidden=true);
-  document.getElementById('ms-save').addEventListener('click',()=>{
-    const dv=document.getElementById('ms-date').value, sv=document.getElementById('ms-start').value, ev=document.getElementById('ms-end').value;
-    if(!dv||!sv||!ev) return;
-    const start=new Date(`${dv}T${sv}:00`), end=new Date(`${dv}T${ev}:00`);
-    if(end<=start) return;
-    const durMin=(end-start)/60000;
-    state.shifts.push({ id:'sh_'+Date.now(), start:start.toISOString(), end:end.toISOString(), durationMin:durMin, earning:(durMin/60)*state.tarifaHora });
-    saveState(); modalShift.hidden=true; renderAll();
-  });
-
-  // ---------- adelantos ----------
-  document.getElementById('form-advance').addEventListener('submit',(e)=>{
-    e.preventDefault();
-    const amount=Number(document.getElementById('adv-amount').value); if(!amount||amount<=0) return;
-    const note=document.getElementById('adv-note').value.trim();
-    const dv=document.getElementById('adv-date').value||todayKey();
-    state.advances.push({id:'adv_'+Date.now(), amount, note, date:new Date(dv+'T12:00:00').toISOString()});
-    saveState(); e.target.reset(); document.getElementById('adv-date').value=todayKey(); renderAll();
-  });
-
-  // ---------- feriados ----------
-  document.getElementById('form-holiday').addEventListener('submit',(e)=>{
-    e.preventDefault();
-    const dv=document.getElementById('hol-date').value; if(!dv) return;
-    const note=document.getElementById('hol-note').value.trim();
-    state.holidays.push({id:'hol_'+Date.now(), date:new Date(dv+'T12:00:00').toISOString(), note});
-    saveState(); e.target.reset(); renderAll();
-  });
-
-  // ---------- init ----------
-  (function init(){
-    loadState();
-    document.getElementById('adv-date').value=todayKey();
-    refreshPunchUI();
-    renderAll();
-    if(!state.tarifaHora){ document.getElementById('set-tarifa').value=''; modalSettings.hidden=false; }
-  })();
-
-  // ---------- service worker ----------
-  if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-  }
+/* ── init ────────────────────────────────────────── */
+load();
+document.getElementById('adv-f').value=today();
+refreshButtons();
+renderAll();
+if (!state.tarifa) { mCfg.hidden=false; }
 
 })();
 </script>
