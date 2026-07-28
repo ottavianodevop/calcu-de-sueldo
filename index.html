@@ -8,6 +8,8 @@
 <meta name="theme-color" content="#14171A">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -16,20 +18,28 @@
   --bg:#14171A;--steel:#222822;--steel2:#2C332C;
   --paper:#ECE8DE;--dim:#A9A89F;
   --hivis:#F5C518;--hivis-d:#8a7615;
-  --moss:#7FA37E;--rust:#C75A45;
+  --moss:#7FA37E;--rust:#C75A45;--blue:#5A8FC7;
   --line:rgba(236,232,222,0.10);--r:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--paper);font-family:'Inter',sans-serif;min-height:100vh;-webkit-tap-highlight-color:transparent;}
-.app{max-width:520px;margin:0 auto;padding:18px 16px 60px;}
+.app{max-width:540px;margin:0 auto;padding:18px 16px 60px;}
 
-/* topbar */
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
 .topbar h1{font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;letter-spacing:.06em;}
 .topbar h1 span{color:var(--hivis);}
 #btn-cfg{width:38px;height:38px;border-radius:10px;background:var(--steel);border:1px solid var(--line);color:var(--dim);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 
-/* entrada / salida */
+/* persist badge */
+#persist-badge{display:none;font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--moss);background:rgba(127,163,126,0.12);border:1px solid rgba(127,163,126,0.25);border-radius:20px;padding:3px 8px;margin-left:8px;vertical-align:middle;}
+#backup-bar{display:flex;align-items:center;justify-content:space-between;background:var(--steel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:11px;font-family:'IBM Plex Mono',monospace;}
+#backup-bar .bk-status{color:var(--dim);}
+#backup-bar .bk-status.ok{color:var(--moss);}
+#backup-bar .bk-status.warn{color:var(--hivis);}
+#backup-bar button{background:none;border:1px solid var(--line);border-radius:6px;color:var(--dim);font-size:11px;padding:3px 8px;cursor:pointer;font-family:'IBM Plex Mono',monospace;}
+#backup-bar button:hover{border-color:var(--hivis-d);color:var(--hivis);}
+
+/* punch */
 .punch-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
 .punch-btn{padding:22px 10px;border-radius:var(--r);border:none;font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:all .2s;}
 #btn-entrada{background:var(--steel);color:var(--paper);}
@@ -38,7 +48,6 @@ body{background:var(--bg);color:var(--paper);font-family:'Inter',sans-serif;min-
 #btn-salida.ready{background:var(--rust);color:#fff;box-shadow:0 0 18px rgba(199,90,69,.35);}
 .punch-btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;}
 
-/* timer */
 .timer-row{text-align:center;margin-bottom:20px;}
 #timer-display{font-family:'IBM Plex Mono',monospace;font-size:32px;font-weight:600;color:var(--hivis);letter-spacing:.04em;}
 #timer-sub{font-size:11px;color:var(--dim);font-family:'IBM Plex Mono',monospace;margin-top:4px;}
@@ -51,28 +60,27 @@ body{background:var(--bg);color:var(--paper);font-family:'Inter',sans-serif;min-
 .stat-hours{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);display:block;margin-top:2px;}
 
 /* tabs */
-.tabs{display:flex;gap:6px;margin-bottom:14px;}
-.tab{flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--dim);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.tabs{display:flex;gap:5px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;}
+.tab{flex:1;min-width:70px;padding:9px 4px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--dim);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
 .tab.on{background:var(--steel2);color:var(--hivis);border-color:var(--hivis-d);}
 .view{display:none;}.view.on{display:block;}
 
-/* botones add */
+/* add buttons */
 .btn-add{width:100%;padding:10px;margin-bottom:10px;background:transparent;border:1px dashed var(--line);border-radius:10px;color:var(--dim);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;}
 .btn-add:hover{border-color:var(--hivis-d);color:var(--paper);}
-.btn-excel{width:100%;padding:10px;margin-bottom:14px;background:transparent;border:1px solid var(--moss);border-radius:10px;color:var(--moss);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
 
-/* form inline */
+/* inline form */
 .iform{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;background:var(--steel);border:1px solid var(--line);border-radius:var(--r);padding:12px;}
 .iform label{font-size:11px;color:var(--dim);display:block;margin-bottom:3px;}
 .ifield{flex:1;min-width:90px;}
 .iform input{width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:13px;}
 .iform .ibtn{width:100%;padding:9px;border-radius:8px;border:none;background:var(--hivis);color:#1a1a14;font-weight:700;font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;margin-top:4px;}
 
-/* neto */
+/* net bar */
 .net-bar{padding:12px;background:var(--steel2);border-radius:var(--r);border:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.03em;}
 .net-bar .amt{font-family:'IBM Plex Mono',monospace;font-size:16px;}
 
-/* lista */
+/* ledger */
 .ledger{list-style:none;}
 .ledger li{display:flex;justify-content:space-between;align-items:center;padding:10px 2px;border-bottom:1px solid var(--line);gap:8px;}
 .ledger li:last-child{border-bottom:none;}
@@ -84,6 +92,27 @@ body{background:var(--bg);color:var(--paper);font-family:'Inter',sans-serif;min-
 .del-btn{background:none;border:none;color:var(--dim);font-size:15px;cursor:pointer;padding:4px 6px;}
 .del-btn:hover{color:var(--rust);}
 .empty{color:var(--dim);font-size:13px;padding:14px 2px;text-align:center;}
+
+/* ── DATOS TAB ─────────────────────────────────── */
+.datos-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.datos-header select{background:var(--steel);color:var(--paper);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;}
+.dl-row{display:flex;gap:8px;}
+.dl-btn{padding:7px 14px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;}
+.dl-pdf{background:var(--rust);color:#fff;}
+.dl-md{background:var(--blue);color:#fff;}
+
+.data-section{margin-bottom:20px;}
+.data-section h3{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.08em;color:var(--hivis);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{text-align:left;padding:7px 8px;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.06em;color:var(--dim);background:var(--steel);border-bottom:1px solid var(--line);}
+.data-table td{padding:7px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--paper);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:nth-child(even) td{background:rgba(255,255,255,0.02);}
+.data-table .total-row td{font-weight:700;color:var(--hivis);background:var(--steel2);}
+.resumen-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
+.res-card{background:var(--steel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+.res-card-label{font-size:10px;color:var(--dim);font-family:'Oswald',sans-serif;letter-spacing:.08em;display:block;margin-bottom:2px;}
+.res-card-val{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;}
 
 /* modal */
 .modal{position:fixed;inset:0;background:rgba(10,12,10,.75);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
@@ -103,7 +132,6 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:16px 0;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--steel2);border:1px solid var(--hivis-d);color:var(--paper);padding:10px 16px;border-radius:10px;font-size:13px;display:flex;gap:10px;align-items:center;z-index:60;white-space:nowrap;}
 .toast[hidden]{display:none;}
 .toast button{background:none;border:none;color:var(--hivis);font-weight:700;cursor:pointer;}
-
 button:focus-visible,input:focus-visible{outline:2px solid var(--hivis);outline-offset:2px;}
 </style>
 </head>
@@ -111,23 +139,20 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--hivis);outline-
 <div class="app">
 
   <header class="topbar">
-    <h1>LA FICHADA<span>.</span></h1>
+    <h1>LA FICHADA<span>.</span><span id="persist-badge">&#128274; guardado</span></h1>
     <button id="btn-cfg" aria-label="Configuracion">&#9881;</button>
   </header>
 
-  <!-- ENTRADA / SALIDA -->
   <div class="punch-row">
     <button class="punch-btn" id="btn-entrada">ENTRADA</button>
     <button class="punch-btn" id="btn-salida" disabled>SALIDA</button>
   </div>
 
-  <!-- TIMER -->
   <div class="timer-row">
     <div id="timer-display">00:00:00</div>
     <div id="timer-sub">Tarifa: $0 / hora</div>
   </div>
 
-  <!-- STATS -->
   <section class="stats">
     <div class="stat-card">
       <span class="stat-label">HOY</span>
@@ -146,17 +171,22 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--hivis);outline-
     </div>
   </section>
 
-  <!-- TABS -->
+  <!-- BACKUP BAR -->
+  <div id="backup-bar">
+    <span id="bk-status" class="bk-status">Sin backup todavia</span>
+    <button id="bk-now">&#11015; Guardar ahora</button>
+  </div>
+
   <nav class="tabs">
     <button class="tab on" data-v="turnos">Turnos</button>
     <button class="tab" data-v="adelantos">Adelantos</button>
     <button class="tab" data-v="feriados">Feriados</button>
+    <button class="tab" data-v="datos">Datos</button>
   </nav>
 
   <!-- TURNOS -->
   <section id="view-turnos" class="view on">
     <button class="btn-add" id="btn-manual">+ Agregar turno manual</button>
-    <button class="btn-excel" id="btn-excel">&#128202; Reporte Excel del mes</button>
     <ul class="ledger" id="list-turnos"></ul>
   </section>
 
@@ -204,7 +234,50 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--hivis);outline-
     <ul class="ledger" id="list-hol"></ul>
   </section>
 
-</div><!-- /app -->
+  <!-- DATOS -->
+  <section id="view-datos" class="view">
+    <div class="datos-header">
+      <select id="datos-filter">
+        <option value="all">Todos los registros</option>
+      </select>
+      <div class="dl-row">
+        <button class="dl-btn dl-pdf" id="btn-dl-pdf">&#8595; PDF</button>
+        <button class="dl-btn dl-md"  id="btn-dl-md">&#8595; MD</button>
+      </div>
+    </div>
+
+    <!-- resumen -->
+    <div class="resumen-grid" id="datos-resumen"></div>
+
+    <!-- tablas -->
+    <div class="data-section">
+      <h3>TURNOS</h3>
+      <div style="overflow-x:auto"><table class="data-table" id="tabla-turnos">
+        <thead><tr>
+          <th>Fecha</th><th>Entrada</th><th>Salida</th><th>Horas</th><th>Ganancia</th>
+        </tr></thead>
+        <tbody id="tbody-turnos"></tbody>
+      </table></div>
+    </div>
+
+    <div class="data-section">
+      <h3>ADELANTOS</h3>
+      <div style="overflow-x:auto"><table class="data-table" id="tabla-adv">
+        <thead><tr><th>Fecha</th><th>Nota</th><th>Monto</th></tr></thead>
+        <tbody id="tbody-adv"></tbody>
+      </table></div>
+    </div>
+
+    <div class="data-section">
+      <h3>FERIADOS</h3>
+      <div style="overflow-x:auto"><table class="data-table" id="tabla-hol">
+        <thead><tr><th>Fecha</th><th>Nota</th></tr></thead>
+        <tbody id="tbody-hol"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+</div>
 
 <!-- MODAL CONFIG -->
 <div class="modal" id="modal-cfg" hidden>
@@ -217,7 +290,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--hivis);outline-
       <button class="mbtn-ok"     id="cfg-save">Guardar</button>
     </div>
     <hr class="sep">
-    <span class="sec-lbl">COPIA DE SEGURIDAD</span>
+    <span class="sec-lbl">AUTO-BACKUP</span>
+    <label for="cfg-autobackup" style="margin-top:6px;margin-bottom:6px;font-size:11px;color:var(--dim);display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="cfg-autobackup" style="width:auto;accent-color:var(--hivis);">
+      Descargar backup al cerrar cada turno
+    </label>
+    <hr class="sep">
+    <span class="sec-lbl">COPIA DE SEGURIDAD MANUAL</span>
     <div class="mrow" style="margin-top:0">
       <button class="mbtn-cancel" id="btn-export">&#11015; Backup</button>
       <button class="mbtn-cancel" id="btn-import-trig">&#11014; Restaurar</button>
@@ -244,7 +323,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--hivis);outline-
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast" hidden>
   <span id="toast-msg"></span>
   <button id="toast-undo">Deshacer</button>
@@ -256,11 +334,72 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--hivis);outline-
 
 var KEY = 'fichada-v3';
 var state = { tarifa: 0, turnos: [], adelantos: [], feriados: [] };
-var undo = null;
+var undoState = null;
 var toastT = null;
 var tickT  = null;
 
-/* ── storage ─────────────────────────────────────── */
+/* ── storage persistente ───────────────────────── */
+/* ── auto-backup ─────────────────────────────────── */
+var BK_KEY = 'fichada-last-backup';
+
+function fmtTimeAgo(ts) {
+  if (!ts) return 'Sin backup todavia';
+  var diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60)  return 'Backup hace ' + diff + 's';
+  if (diff < 3600) return 'Backup hace ' + Math.floor(diff/60) + 'm';
+  if (diff < 86400) return 'Backup hace ' + Math.floor(diff/3600) + 'h';
+  return 'Backup hace ' + Math.floor(diff/86400) + 'd';
+}
+
+function updateBackupBar() {
+  var ts = parseInt(localStorage.getItem(BK_KEY)||'0', 10);
+  var el = document.getElementById('bk-status');
+  if (!el) return;
+  var diff = ts ? (Date.now() - ts) : Infinity;
+  el.textContent = fmtTimeAgo(ts||0);
+  el.className = 'bk-status' + (diff < 3600000 ? ' ok' : diff < 86400000 ? ' warn' : '');
+}
+
+function doAutoBackup(silent) {
+  try {
+    var blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url;
+    a.download = 'fichada-backup-' + today() + '.json';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    localStorage.setItem(BK_KEY, Date.now().toString());
+    updateBackupBar();
+    if (!silent) showToast('Backup guardado en Descargas', true);
+  } catch(e) { if (!silent) showToast('Error al guardar backup', true); }
+}
+
+function getAutoBackup() {
+  return localStorage.getItem('fichada-autobackup') === '1';
+}
+
+// cuando la app pasa a segundo plano en el celu
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden' && getAutoBackup()) {
+    doAutoBackup(true);
+  }
+});
+
+// refresca el texto "hace X minutos" cada 60 segundos
+setInterval(updateBackupBar, 60000);
+
+function requestPersist() {
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().then(function(granted) {
+      if (granted) {
+        var badge = document.getElementById('persist-badge');
+        if (badge) badge.style.display = 'inline';
+      }
+    });
+  }
+}
+
 function load() {
   try {
     var r = localStorage.getItem(KEY);
@@ -273,11 +412,12 @@ function load() {
     }
   } catch(e) {}
 }
+
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {}
 }
 
-/* ── helpers ─────────────────────────────────────── */
+/* ── helpers ───────────────────────────────────── */
 function pad(n) { return n < 10 ? '0'+n : ''+n; }
 function dkey(d) { var x=new Date(d); return x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate()); }
 function today() { return dkey(new Date()); }
@@ -287,21 +427,23 @@ function weekStart(d) {
 }
 function sameDay(iso)   { return dkey(iso)===today(); }
 function sameWeek(iso)  { return weekStart(iso).getTime()===weekStart(new Date()).getTime(); }
-function sameMonth(iso) {
-  var a=new Date(iso),b=new Date();
+function sameMonth(iso,ref) {
+  var a=new Date(iso), b=ref?new Date(ref):new Date();
   return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth();
 }
-function fmtMoney(n) { return '$'+Math.round(n||0).toLocaleString('es-AR'); }
-function fmtHM(m)    { return Math.floor(m/60)+'h '+Math.round(m%60)+'m'; }
+function monthKey(iso) { var d=new Date(iso); return d.getFullYear()+'-'+pad(d.getMonth()+1); }
+function fmtMoney(n)  { return '$'+Math.round(n||0).toLocaleString('es-AR'); }
+function fmtHM(m)     { return Math.floor(m/60)+'h '+Math.round(m%60)+'m'; }
+function fmtHours(m)  { return parseFloat((m/60).toFixed(2))+'h'; }
 function fmtClock(ms) {
   var s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
   return pad(h)+':'+pad(m)+':'+pad(sec);
 }
-function fmtShort(iso) { return new Date(iso).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}); }
+function fmtShort(iso) { return new Date(iso).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
 function fmtTime(iso)  { return new Date(iso).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); }
-function genId()       { return 'id'+Date.now()+'_'+Math.floor(Math.random()*10000); }
+function genId()       { return 'id'+Date.now()+'_'+Math.floor(Math.random()*9999); }
 
-/* ── turno activo ────────────────────────────────── */
+/* ── turno activo ──────────────────────────────── */
 function turnoAbierto() {
   for (var i=0;i<state.turnos.length;i++) {
     if (!state.turnos[i].fin) return state.turnos[i];
@@ -309,7 +451,7 @@ function turnoAbierto() {
   return null;
 }
 
-/* ── botones entrada / salida ────────────────────── */
+/* ── botones entrada / salida ──────────────────── */
 var btnE = document.getElementById('btn-entrada');
 var btnS = document.getElementById('btn-salida');
 var disp = document.getElementById('timer-display');
@@ -318,16 +460,12 @@ var sub  = document.getElementById('timer-sub');
 function refreshButtons() {
   var ta = turnoAbierto();
   if (ta) {
-    btnE.classList.add('active');
-    btnE.disabled = true;
-    btnS.classList.add('ready');
-    btnS.disabled = false;
+    btnE.classList.add('active'); btnE.disabled = true;
+    btnS.classList.add('ready'); btnS.disabled = false;
     startTick(ta);
   } else {
-    btnE.classList.remove('active');
-    btnE.disabled = false;
-    btnS.classList.remove('ready');
-    btnS.disabled = true;
+    btnE.classList.remove('active'); btnE.disabled = false;
+    btnS.classList.remove('ready'); btnS.disabled = true;
     if (tickT) { clearInterval(tickT); tickT=null; }
     disp.textContent = '00:00:00';
   }
@@ -336,20 +474,15 @@ function refreshButtons() {
 
 function startTick(turno) {
   if (tickT) clearInterval(tickT);
-  tickT = setInterval(function() {
-    disp.textContent = fmtClock(Date.now()-new Date(turno.inicio).getTime());
-  }, 1000);
-  disp.textContent = fmtClock(Date.now()-new Date(turno.inicio).getTime());
+  function tick() { disp.textContent = fmtClock(Date.now()-new Date(turno.inicio).getTime()); }
+  tick();
+  tickT = setInterval(tick, 1000);
 }
 
-/* visibilitychange: recalcula el timer cuando vuelve al frente */
 document.addEventListener('visibilitychange', function() {
   var ta = turnoAbierto();
-  if (document.visibilityState==='visible' && ta) {
-    startTick(ta);
-  } else if (tickT) {
-    clearInterval(tickT); tickT=null;
-  }
+  if (document.visibilityState==='visible' && ta) { startTick(ta); }
+  else if (tickT) { clearInterval(tickT); tickT=null; }
 });
 
 btnE.addEventListener('click', function() {
@@ -359,56 +492,45 @@ btnE.addEventListener('click', function() {
 });
 
 btnS.addEventListener('click', function() {
-  var ta = turnoAbierto();
-  if (!ta) return;
+  var ta = turnoAbierto(); if (!ta) return;
   ta.fin = new Date().toISOString();
   ta.durMin   = (new Date(ta.fin)-new Date(ta.inicio))/60000;
   ta.ganancia = (ta.durMin/60)*state.tarifa;
   save(); refreshButtons(); renderAll();
-  toast('Turno cerrado · '+fmtHM(ta.durMin)+' · '+fmtMoney(ta.ganancia), true);
+  if (getAutoBackup()) { setTimeout(function(){ doAutoBackup(true); }, 800); }
+  showToast('Turno cerrado \u00b7 '+fmtHM(ta.durMin)+' \u00b7 '+fmtMoney(ta.ganancia), true);
 });
 
-/* ── stats ───────────────────────────────────────── */
+/* ── stats ─────────────────────────────────────── */
 function calcRange(filterFn) {
   var mins=0, money=0;
   for (var i=0;i<state.turnos.length;i++) {
-    var t=state.turnos[i];
-    if (!t.fin) continue;
+    var t=state.turnos[i]; if (!t.fin) continue;
     if (filterFn(t.inicio)) { mins+=t.durMin; money+=t.ganancia; }
   }
   return {mins:mins,money:money};
 }
 
 function renderStats() {
-  var now = new Date();
-  var hoy = calcRange(sameDay);
-  var sem = calcRange(sameWeek);
-  var mes = calcRange(sameMonth);
+  var hoy=calcRange(sameDay), sem=calcRange(sameWeek), mes=calcRange(function(iso){return sameMonth(iso);});
+  document.getElementById('s-hoy-m').textContent=fmtMoney(hoy.money);
+  document.getElementById('s-hoy-h').textContent=fmtHM(hoy.mins);
+  document.getElementById('s-sem-m').textContent=fmtMoney(sem.money);
+  document.getElementById('s-sem-h').textContent=fmtHM(sem.mins);
+  document.getElementById('s-mes-m').textContent=fmtMoney(mes.money);
+  document.getElementById('s-mes-h').textContent=fmtHM(mes.mins);
 
-  document.getElementById('s-hoy-m').textContent = fmtMoney(hoy.money);
-  document.getElementById('s-hoy-h').textContent = fmtHM(hoy.mins);
-  document.getElementById('s-sem-m').textContent = fmtMoney(sem.money);
-  document.getElementById('s-sem-h').textContent = fmtHM(sem.mins);
-  document.getElementById('s-mes-m').textContent = fmtMoney(mes.money);
-  document.getElementById('s-mes-h').textContent = fmtHM(mes.mins);
+  var advMes=0;
+  for (var j=0;j<state.adelantos.length;j++) { if(sameMonth(state.adelantos[j].fecha)) advMes+=Number(state.adelantos[j].monto); }
+  var neto=mes.money-advMes;
+  var ne=document.getElementById('neto-mes');
+  ne.textContent=fmtMoney(neto); ne.style.color=neto<0?'var(--rust)':'var(--moss)';
 
-  var advMes = 0;
-  for (var j=0;j<state.adelantos.length;j++) {
-    if (sameMonth(state.adelantos[j].fecha)) advMes += Number(state.adelantos[j].monto);
-  }
-  var neto = mes.money - advMes;
-  var netoEl = document.getElementById('neto-mes');
-  netoEl.textContent = fmtMoney(neto);
-  netoEl.style.color = neto<0 ? 'var(--rust)' : 'var(--moss)';
-
-  var holCnt = 0;
-  for (var k=0;k<state.feriados.length;k++) {
-    if (sameMonth(state.feriados[k].fecha)) holCnt++;
-  }
-  document.getElementById('hol-count').textContent = holCnt;
+  var hc=0; for(var k=0;k<state.feriados.length;k++){if(sameMonth(state.feriados[k].fecha))hc++;}
+  document.getElementById('hol-count').textContent=hc;
 }
 
-/* ── listas ──────────────────────────────────────── */
+/* ── ledger lists ──────────────────────────────── */
 function mkEl(tag,cls,txt) {
   var el=document.createElement(tag);
   if(cls) el.className=cls;
@@ -416,35 +538,25 @@ function mkEl(tag,cls,txt) {
   return el;
 }
 
-function delBtn(col, id) {
+function delBtn(col,id) {
   var b=mkEl('button','del-btn','\u2715');
-  b.setAttribute('aria-label','Eliminar');
   (function(c,i){b.addEventListener('click',function(){delItem(c,i);});})(col,id);
   return b;
 }
 
-function emptyRow(ul, msg) {
+function emptyRow(ul,msg) {
   var li=mkEl('li'); li.style.display='block';
-  li.className='empty'; li.textContent=msg;
-  ul.appendChild(li);
+  li.className='empty'; li.textContent=msg; ul.appendChild(li);
 }
 
 function renderTurnos() {
-  var ul=document.getElementById('list-turnos');
-  ul.innerHTML='';
+  var ul=document.getElementById('list-turnos'); ul.innerHTML='';
   var sorted=state.turnos.slice().sort(function(a,b){return new Date(b.inicio)-new Date(a.inicio);});
-  if (!sorted.length) { emptyRow(ul,'Todavia no hay turnos.'); return; }
-  sorted.forEach(function(t) {
-    var li=mkEl('li');
-    var main=mkEl('div','led-main');
+  if(!sorted.length){emptyRow(ul,'Todavia no hay turnos.');return;}
+  sorted.forEach(function(t){
+    var li=mkEl('li'), main=mkEl('div','led-main');
     main.appendChild(mkEl('span','led-date',fmtShort(t.inicio)));
-    var desc;
-    if (!t.fin) {
-      desc = 'En curso...';
-    } else {
-      desc = fmtTime(t.inicio)+' \u2013 '+fmtTime(t.fin)+' \u00b7 '+fmtHM(t.durMin);
-    }
-    main.appendChild(mkEl('span','led-desc',desc));
+    main.appendChild(mkEl('span','led-desc', t.fin ? fmtTime(t.inicio)+' \u2013 '+fmtTime(t.fin)+' \u00b7 '+fmtHM(t.durMin) : 'En curso...'));
     li.appendChild(main);
     li.appendChild(mkEl('span','led-amt pos', t.fin?fmtMoney(t.ganancia):'\u2014'));
     li.appendChild(delBtn('turnos',t.id));
@@ -453,13 +565,11 @@ function renderTurnos() {
 }
 
 function renderAdelantos() {
-  var ul=document.getElementById('list-adv');
-  ul.innerHTML='';
+  var ul=document.getElementById('list-adv'); ul.innerHTML='';
   var sorted=state.adelantos.slice().sort(function(a,b){return new Date(b.fecha)-new Date(a.fecha);});
-  if (!sorted.length) { emptyRow(ul,'No hay adelantos.'); return; }
-  sorted.forEach(function(a) {
-    var li=mkEl('li');
-    var main=mkEl('div','led-main');
+  if(!sorted.length){emptyRow(ul,'No hay adelantos.');return;}
+  sorted.forEach(function(a){
+    var li=mkEl('li'), main=mkEl('div','led-main');
     main.appendChild(mkEl('span','led-date',fmtShort(a.fecha)));
     main.appendChild(mkEl('span','led-desc',a.nota||'Adelanto'));
     li.appendChild(main);
@@ -470,13 +580,11 @@ function renderAdelantos() {
 }
 
 function renderFeriados() {
-  var ul=document.getElementById('list-hol');
-  ul.innerHTML='';
+  var ul=document.getElementById('list-hol'); ul.innerHTML='';
   var sorted=state.feriados.slice().sort(function(a,b){return new Date(b.fecha)-new Date(a.fecha);});
-  if (!sorted.length) { emptyRow(ul,'No hay feriados.'); return; }
-  sorted.forEach(function(f) {
-    var li=mkEl('li');
-    var main=mkEl('div','led-main');
+  if(!sorted.length){emptyRow(ul,'No hay feriados.');return;}
+  sorted.forEach(function(f){
+    var li=mkEl('li'), main=mkEl('div','led-main');
     main.appendChild(mkEl('span','led-date',fmtShort(f.fecha)));
     main.appendChild(mkEl('span','led-desc',f.nota||'Feriado'));
     li.appendChild(main);
@@ -485,37 +593,329 @@ function renderFeriados() {
   });
 }
 
-function renderAll() { renderStats(); renderTurnos(); renderAdelantos(); renderFeriados(); }
-
-/* ── eliminar + undo ─────────────────────────────── */
-function delItem(col, id) {
-  var arr=state[col];
-  var idx=-1;
-  for (var i=0;i<arr.length;i++) { if(arr[i].id===id){idx=i;break;} }
-  if (idx===-1) return;
-  var removed=arr.splice(idx,1)[0];
-  undo={col:col,item:removed,idx:idx};
-  save(); renderAll(); toast('Eliminado',false);
+/* ── TAB DATOS ─────────────────────────────────── */
+function buildMonthOptions() {
+  var sel=document.getElementById('datos-filter');
+  var months={};
+  var all=state.turnos.concat(state.adelantos).concat(state.feriados);
+  all.forEach(function(x){ var iso=x.inicio||x.fecha; if(iso) months[monthKey(iso)]=true; });
+  var keys=Object.keys(months).sort().reverse();
+  // limpiar opciones excepto "todos"
+  while(sel.options.length>1) sel.remove(1);
+  keys.forEach(function(k){
+    var opt=document.createElement('option');
+    opt.value=k;
+    var d=new Date(k+'-01');
+    opt.textContent=d.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+    sel.appendChild(opt);
+  });
 }
 
-/* ── tabs ────────────────────────────────────────── */
+function getFilteredData() {
+  var f=document.getElementById('datos-filter').value;
+  if(f==='all') {
+    return {
+      turnos:   state.turnos.filter(function(t){return t.fin;}).slice().sort(function(a,b){return new Date(b.inicio)-new Date(a.inicio);}),
+      adelantos:state.adelantos.slice().sort(function(a,b){return new Date(b.fecha)-new Date(a.fecha);}),
+      feriados: state.feriados.slice().sort(function(a,b){return new Date(b.fecha)-new Date(a.fecha);}),
+      label:'Todos los registros'
+    };
+  }
+  var ref=f+'-01';
+  return {
+    turnos:   state.turnos.filter(function(t){return t.fin&&sameMonth(t.inicio,ref);}).sort(function(a,b){return new Date(a.inicio)-new Date(b.inicio);}),
+    adelantos:state.adelantos.filter(function(a){return sameMonth(a.fecha,ref);}).sort(function(a,b){return new Date(a.fecha)-new Date(b.fecha);}),
+    feriados: state.feriados.filter(function(fh){return sameMonth(fh.fecha,ref);}).sort(function(a,b){return new Date(a.fecha)-new Date(b.fecha);}),
+    label: new Date(ref).toLocaleDateString('es-AR',{month:'long',year:'numeric'})
+  };
+}
+
+function renderDatos() {
+  buildMonthOptions();
+  var d=getFilteredData();
+
+  // resumen
+  var totMins=0, totGan=0, totAdv=0;
+  d.turnos.forEach(function(t){totMins+=t.durMin;totGan+=t.ganancia;});
+  d.adelantos.forEach(function(a){totAdv+=Number(a.monto);});
+  var neto=totGan-totAdv;
+
+  var rg=document.getElementById('datos-resumen'); rg.innerHTML='';
+  var resCards=[
+    ['Turnos',d.turnos.length+' turno'+(d.turnos.length!==1?'s':'')],
+    ['Total horas',fmtHours(totMins)],
+    ['Ganancia bruta',fmtMoney(totGan)],
+    ['Adelantos',fmtMoney(totAdv)],
+    ['Neto a cobrar',fmtMoney(neto)],
+    ['Feriados',d.feriados.length]
+  ];
+  resCards.forEach(function(rc){
+    var card=mkEl('div','res-card');
+    card.appendChild(mkEl('span','res-card-label',rc[0].toUpperCase()));
+    var v=mkEl('span','res-card-val',rc[1]);
+    if(rc[0]==='Neto a cobrar') v.style.color=neto<0?'var(--rust)':'var(--moss)';
+    card.appendChild(v);
+    rg.appendChild(card);
+  });
+
+  // tabla turnos
+  var tb=document.getElementById('tbody-turnos'); tb.innerHTML='';
+  if(!d.turnos.length){
+    var tr=document.createElement('tr'); var td=document.createElement('td');
+    td.colSpan=5; td.textContent='Sin turnos'; td.style.color='var(--dim)'; td.style.textAlign='center';
+    tr.appendChild(td); tb.appendChild(tr);
+  } else {
+    d.turnos.forEach(function(t){
+      var tr=document.createElement('tr');
+      [fmtShort(t.inicio),fmtTime(t.inicio),fmtTime(t.fin),fmtHM(t.durMin),fmtMoney(t.ganancia)].forEach(function(v){
+        var td=document.createElement('td'); td.textContent=v; tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    var trTot=document.createElement('tr'); trTot.className='total-row';
+    ['TOTAL','','',fmtHM(totMins),fmtMoney(totGan)].forEach(function(v){
+      var td=document.createElement('td'); td.textContent=v; trTot.appendChild(td);
+    });
+    tb.appendChild(trTot);
+  }
+
+  // tabla adelantos
+  var ta=document.getElementById('tbody-adv'); ta.innerHTML='';
+  if(!d.adelantos.length){
+    var tr2=document.createElement('tr'); var td2=document.createElement('td');
+    td2.colSpan=3; td2.textContent='Sin adelantos'; td2.style.color='var(--dim)'; td2.style.textAlign='center';
+    tr2.appendChild(td2); ta.appendChild(tr2);
+  } else {
+    d.adelantos.forEach(function(a){
+      var tr=document.createElement('tr');
+      [fmtShort(a.fecha),a.nota||'-',fmtMoney(a.monto)].forEach(function(v){
+        var td=document.createElement('td'); td.textContent=v; tr.appendChild(td);
+      });
+      ta.appendChild(tr);
+    });
+    var trA=document.createElement('tr'); trA.className='total-row';
+    ['TOTAL','',fmtMoney(totAdv)].forEach(function(v){
+      var td=document.createElement('td'); td.textContent=v; trA.appendChild(td);
+    });
+    ta.appendChild(trA);
+  }
+
+  // tabla feriados
+  var tf=document.getElementById('tbody-hol'); tf.innerHTML='';
+  if(!d.feriados.length){
+    var tr3=document.createElement('tr'); var td3=document.createElement('td');
+    td3.colSpan=2; td3.textContent='Sin feriados'; td3.style.color='var(--dim)'; td3.style.textAlign='center';
+    tr3.appendChild(td3); tf.appendChild(tr3);
+  } else {
+    d.feriados.forEach(function(fh){
+      var tr=document.createElement('tr');
+      [fmtShort(fh.fecha),fh.nota||'-'].forEach(function(v){
+        var td=document.createElement('td'); td.textContent=v; tr.appendChild(td);
+      });
+      tf.appendChild(tr);
+    });
+  }
+}
+
+document.getElementById('datos-filter').addEventListener('change', renderDatos);
+
+/* ── descarga PDF ──────────────────────────────── */
+document.getElementById('btn-dl-pdf').addEventListener('click', function() {
+  if (typeof window.jspdf === 'undefined') { showToast('Libreria PDF no cargada', true); return; }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  var d = getFilteredData();
+  var totMins=0,totGan=0,totAdv=0;
+  d.turnos.forEach(function(t){totMins+=t.durMin;totGan+=t.ganancia;});
+  d.adelantos.forEach(function(a){totAdv+=Number(a.monto);});
+  var neto=totGan-totAdv;
+
+  // fondo
+  doc.setFillColor(20,23,26); doc.rect(0,0,210,297,'F');
+
+  // titulo
+  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(245,197,24);
+  doc.text('LA FICHADA.',15,18);
+  doc.setFontSize(10); doc.setTextColor(169,168,159);
+  doc.text(d.label, 15, 25);
+
+  // resumen
+  doc.setFontSize(8); doc.setTextColor(169,168,159);
+  doc.text('RESUMEN', 15, 34);
+  doc.setDrawColor(44,51,44); doc.line(15,36,195,36);
+  var resData=[
+    ['Turnos',''+d.turnos.length],['Horas totales',fmtHours(totMins)],
+    ['Ganancia bruta',fmtMoney(totGan)],['Adelantos',fmtMoney(totAdv)],
+    ['Neto a cobrar',fmtMoney(neto)],['Feriados',''+d.feriados.length]
+  ];
+  doc.autoTable({
+    startY:38, body:resData,
+    theme:'plain',
+    styles:{fillColor:[34,40,34],textColor:[236,232,222],fontSize:9,cellPadding:3},
+    columnStyles:{0:{textColor:[169,168,159]},1:{halign:'right',fontStyle:'bold'}},
+    margin:{left:15,right:15}
+  });
+
+  // turnos
+  var y1=doc.lastAutoTable.finalY+8;
+  doc.setFontSize(8); doc.setTextColor(245,197,24); doc.text('TURNOS', 15, y1);
+  doc.setDrawColor(44,51,44); doc.line(15,y1+2,195,y1+2);
+  var tBody=d.turnos.map(function(t){
+    return [fmtShort(t.inicio),fmtTime(t.inicio),fmtTime(t.fin),fmtHM(t.durMin),fmtMoney(t.ganancia)];
+  });
+  tBody.push(['TOTAL','','',fmtHM(totMins),fmtMoney(totGan)]);
+  doc.autoTable({
+    startY:y1+4,
+    head:[['Fecha','Entrada','Salida','Duracion','Ganancia']],
+    body:tBody,
+    theme:'plain',
+    headStyles:{fillColor:[34,40,34],textColor:[245,197,24],fontSize:8,fontStyle:'bold'},
+    bodyStyles:{fillColor:[20,23,26],textColor:[236,232,222],fontSize:8},
+    alternateRowStyles:{fillColor:[26,30,26]},
+    foot:[],
+    didParseCell:function(data){
+      if(data.row.index===tBody.length-1){data.cell.styles.textColor=[245,197,24];data.cell.styles.fontStyle='bold';}
+    },
+    margin:{left:15,right:15}
+  });
+
+  // adelantos
+  if(d.adelantos.length) {
+    var y2=doc.lastAutoTable.finalY+8;
+    doc.setFontSize(8); doc.setTextColor(245,197,24); doc.text('ADELANTOS', 15, y2);
+    doc.setDrawColor(44,51,44); doc.line(15,y2+2,195,y2+2);
+    var aBody=d.adelantos.map(function(a){return [fmtShort(a.fecha),a.nota||'-',fmtMoney(a.monto)];});
+    aBody.push(['TOTAL','',fmtMoney(totAdv)]);
+    doc.autoTable({
+      startY:y2+4, head:[['Fecha','Nota','Monto']], body:aBody, theme:'plain',
+      headStyles:{fillColor:[34,40,34],textColor:[245,197,24],fontSize:8,fontStyle:'bold'},
+      bodyStyles:{fillColor:[20,23,26],textColor:[236,232,222],fontSize:8},
+      alternateRowStyles:{fillColor:[26,30,26]},
+      didParseCell:function(data){if(data.row.index===aBody.length-1){data.cell.styles.textColor=[245,197,24];data.cell.styles.fontStyle='bold';}},
+      margin:{left:15,right:15}
+    });
+  }
+
+  // feriados
+  if(d.feriados.length) {
+    var y3=doc.lastAutoTable.finalY+8;
+    doc.setFontSize(8); doc.setTextColor(245,197,24); doc.text('FERIADOS', 15, y3);
+    doc.setDrawColor(44,51,44); doc.line(15,y3+2,195,y3+2);
+    doc.autoTable({
+      startY:y3+4, head:[['Fecha','Nota']],
+      body:d.feriados.map(function(f){return [fmtShort(f.fecha),f.nota||'-'];}),
+      theme:'plain',
+      headStyles:{fillColor:[34,40,34],textColor:[245,197,24],fontSize:8,fontStyle:'bold'},
+      bodyStyles:{fillColor:[20,23,26],textColor:[236,232,222],fontSize:8},
+      alternateRowStyles:{fillColor:[26,30,26]},
+      margin:{left:15,right:15}
+    });
+  }
+
+  doc.save('fichada-'+today()+'.pdf');
+  showToast('PDF descargado', true);
+});
+
+/* ── descarga Markdown ─────────────────────────── */
+document.getElementById('btn-dl-md').addEventListener('click', function() {
+  var d=getFilteredData();
+  var totMins=0,totGan=0,totAdv=0;
+  d.turnos.forEach(function(t){totMins+=t.durMin;totGan+=t.ganancia;});
+  d.adelantos.forEach(function(a){totAdv+=Number(a.monto);});
+  var neto=totGan-totAdv;
+
+  var lines=[];
+  lines.push('# La Fichada — '+d.label);
+  lines.push('');
+  lines.push('## Resumen');
+  lines.push('');
+  lines.push('| Concepto | Valor |');
+  lines.push('|---|---|');
+  lines.push('| Turnos | '+d.turnos.length+' |');
+  lines.push('| Total horas | '+fmtHours(totMins)+' |');
+  lines.push('| Ganancia bruta | '+fmtMoney(totGan)+' |');
+  lines.push('| Adelantos | '+fmtMoney(totAdv)+' |');
+  lines.push('| **Neto a cobrar** | **'+fmtMoney(neto)+'** |');
+  lines.push('| Feriados | '+d.feriados.length+' |');
+  lines.push('');
+
+  lines.push('## Turnos');
+  lines.push('');
+  lines.push('| Fecha | Entrada | Salida | Duracion | Ganancia |');
+  lines.push('|---|---|---|---|---|');
+  d.turnos.forEach(function(t){
+    lines.push('| '+fmtShort(t.inicio)+' | '+fmtTime(t.inicio)+' | '+fmtTime(t.fin)+' | '+fmtHM(t.durMin)+' | '+fmtMoney(t.ganancia)+' |');
+  });
+  lines.push('| **TOTAL** | | | **'+fmtHM(totMins)+'** | **'+fmtMoney(totGan)+'** |');
+  lines.push('');
+
+  if(d.adelantos.length) {
+    lines.push('## Adelantos');
+    lines.push('');
+    lines.push('| Fecha | Nota | Monto |');
+    lines.push('|---|---|---|');
+    d.adelantos.forEach(function(a){
+      lines.push('| '+fmtShort(a.fecha)+' | '+(a.nota||'-')+' | '+fmtMoney(a.monto)+' |');
+    });
+    lines.push('| **TOTAL** | | **'+fmtMoney(totAdv)+'** |');
+    lines.push('');
+  }
+
+  if(d.feriados.length) {
+    lines.push('## Feriados');
+    lines.push('');
+    lines.push('| Fecha | Nota |');
+    lines.push('|---|---|');
+    d.feriados.forEach(function(f){
+      lines.push('| '+fmtShort(f.fecha)+' | '+(f.nota||'-')+' |');
+    });
+    lines.push('');
+  }
+
+  var blob=new Blob([lines.join('\n')],{type:'text/markdown'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download='fichada-'+today()+'.md';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('Markdown descargado', true);
+});
+
+/* ── render all ────────────────────────────────── */
+function renderAll() {
+  renderStats(); renderTurnos(); renderAdelantos(); renderFeriados(); renderDatos();
+}
+
+/* ── eliminar + undo ───────────────────────────── */
+function delItem(col,id) {
+  var arr=state[col], idx=-1;
+  for(var i=0;i<arr.length;i++){if(arr[i].id===id){idx=i;break;}}
+  if(idx===-1) return;
+  var removed=arr.splice(idx,1)[0];
+  undoState={col:col,item:removed,idx:idx};
+  save(); renderAll(); showToast('Eliminado',false);
+}
+
+/* ── tabs ──────────────────────────────────────── */
 var tabBtns=document.querySelectorAll('.tab');
-for (var ti=0;ti<tabBtns.length;ti++) {
+for(var ti=0;ti<tabBtns.length;ti++){
   (function(btn){
     btn.addEventListener('click',function(){
       for(var i=0;i<tabBtns.length;i++) tabBtns[i].classList.remove('on');
       var views=document.querySelectorAll('.view');
       for(var j=0;j<views.length;j++) views[j].classList.remove('on');
       btn.classList.add('on');
-      document.getElementById('view-'+btn.getAttribute('data-v')).classList.add('on');
+      var v=document.getElementById('view-'+btn.getAttribute('data-v'));
+      v.classList.add('on');
+      if(btn.getAttribute('data-v')==='datos') renderDatos();
     });
   })(tabBtns[ti]);
 }
 
-/* ── adelantos form ──────────────────────────────── */
-document.getElementById('btn-adv').addEventListener('click', function() {
+/* ── adelantos ─────────────────────────────────── */
+document.getElementById('btn-adv').addEventListener('click',function(){
   var m=Number(document.getElementById('adv-m').value);
-  if (!m||m<=0) { toast('Ingresa un monto valido',true); return; }
+  if(!m||m<=0){showToast('Ingresa un monto valido',true);return;}
   var n=document.getElementById('adv-n').value;
   var f=document.getElementById('adv-f').value||today();
   state.adelantos.push({id:genId(),fecha:new Date(f+'T12:00:00').toISOString(),monto:m,nota:n});
@@ -525,10 +925,10 @@ document.getElementById('btn-adv').addEventListener('click', function() {
   renderAll();
 });
 
-/* ── feriados form ───────────────────────────────── */
-document.getElementById('btn-hol').addEventListener('click', function() {
+/* ── feriados ──────────────────────────────────── */
+document.getElementById('btn-hol').addEventListener('click',function(){
   var f=document.getElementById('hol-f').value;
-  if (!f) { toast('Selecciona una fecha',true); return; }
+  if(!f){showToast('Selecciona una fecha',true);return;}
   var n=document.getElementById('hol-n').value;
   state.feriados.push({id:genId(),fecha:new Date(f+'T12:00:00').toISOString(),nota:n});
   save();
@@ -537,11 +937,10 @@ document.getElementById('btn-hol').addEventListener('click', function() {
   renderAll();
 });
 
-/* ── modal config ────────────────────────────────── */
+/* ── config modal ──────────────────────────────── */
 var mCfg=document.getElementById('modal-cfg');
 document.getElementById('btn-cfg').addEventListener('click',function(){
-  document.getElementById('cfg-tarifa').value=state.tarifa||'';
-  mCfg.hidden=false;
+  document.getElementById('cfg-tarifa').value=state.tarifa||''; mCfg.hidden=false;
 });
 document.getElementById('cfg-cancel').addEventListener('click',function(){mCfg.hidden=true;});
 document.getElementById('cfg-save').addEventListener('click',function(){
@@ -549,35 +948,35 @@ document.getElementById('cfg-save').addEventListener('click',function(){
   save(); mCfg.hidden=true; refreshButtons(); renderAll();
 });
 
-/* ── backup ──────────────────────────────────────── */
+/* ── backup ────────────────────────────────────── */
 document.getElementById('btn-export').addEventListener('click',function(){
   try {
     var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
     var url=URL.createObjectURL(blob);
     var a=document.createElement('a');
     a.href=url; a.download='fichada-backup-'+today()+'.json';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url); toast('Backup descargado',true);
-  } catch(e){toast('Error al exportar',true);}
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    showToast('Backup descargado',true);
+  } catch(e){showToast('Error al exportar',true);}
 });
-var fImport=document.getElementById('file-import');
-document.getElementById('btn-import-trig').addEventListener('click',function(){fImport.click();});
-fImport.addEventListener('change',function(e){
+var fImp=document.getElementById('file-import');
+document.getElementById('btn-import-trig').addEventListener('click',function(){fImp.click();});
+fImp.addEventListener('change',function(e){
   var file=e.target.files[0]; if(!file) return;
   var r=new FileReader();
   r.onload=function(ev){
     try {
       var p=JSON.parse(ev.target.result);
-      if (!p||!Array.isArray(p.turnos)) throw new Error();
+      if(!p||!Array.isArray(p.turnos)) throw new Error();
       state={tarifa:p.tarifa||0,turnos:p.turnos,adelantos:p.adelantos||[],feriados:p.feriados||[]};
       save(); mCfg.hidden=true; refreshButtons(); renderAll();
-      toast('Backup restaurado',true);
-    } catch(err){toast('Archivo invalido',true);}
+      showToast('Backup restaurado',true);
+    } catch(err){showToast('Archivo invalido',true);}
   };
-  r.readAsText(file); fImport.value='';
+  r.readAsText(file); fImp.value='';
 });
 
-/* ── turno manual ────────────────────────────────── */
+/* ── turno manual ──────────────────────────────── */
 var mManual=document.getElementById('modal-manual');
 document.getElementById('btn-manual').addEventListener('click',function(){
   document.getElementById('mm-f').value=today();
@@ -590,96 +989,63 @@ document.getElementById('mm-save').addEventListener('click',function(){
   var f=document.getElementById('mm-f').value;
   var hi=document.getElementById('mm-ini').value;
   var hf=document.getElementById('mm-fin').value;
-  if (!f||!hi||!hf){toast('Completa todos los campos',true);return;}
+  if(!f||!hi||!hf){showToast('Completa todos los campos',true);return;}
   var ini=new Date(f+'T'+hi+':00');
   var fin=new Date(f+'T'+hf+':00');
-  if (fin<=ini){toast('La salida debe ser posterior a la entrada',true);return;}
+  // turno nocturno: si la salida es menor o igual a la entrada, asumimos que es el dia siguiente
+  if(fin<=ini){ fin=new Date(fin.getTime()+24*60*60*1000); }
   var dur=(fin-ini)/60000;
+  if(dur>24*60){showToast('El turno no puede superar 24 horas',true);return;}
   state.turnos.push({id:genId(),inicio:ini.toISOString(),fin:fin.toISOString(),durMin:dur,ganancia:(dur/60)*state.tarifa});
   save(); mManual.hidden=true; renderAll();
+  showToast('Turno guardado \u00b7 '+fmtHM(dur), true);
 });
 
-/* ── Excel ───────────────────────────────────────── */
-document.getElementById('btn-excel').addEventListener('click',function(){
-  if (typeof XLSX==='undefined'){toast('Libreria no cargada, revisa internet',true);return;}
-  var now=new Date();
-  var mes=now.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
-  var fname='fichada-'+now.getFullYear()+'-'+pad(now.getMonth()+1)+'.xlsx';
-
-  /* turnos del mes */
-  var tmes=state.turnos.filter(function(t){return t.fin&&sameMonth(t.inicio);});
-  tmes.sort(function(a,b){return new Date(a.inicio)-new Date(b.inicio);});
-  var totMins=0,totGan=0;
-  var wsTurnos=[['Fecha','Entrada','Salida','Duracion (min)','Horas','Ganancia ($)']];
-  tmes.forEach(function(t){
-    totMins+=t.durMin; totGan+=t.ganancia;
-    wsTurnos.push([
-      fmtShort(t.inicio), fmtTime(t.inicio), fmtTime(t.fin),
-      Math.round(t.durMin), parseFloat((t.durMin/60).toFixed(2)), Math.round(t.ganancia)
-    ]);
-  });
-  wsTurnos.push([]); wsTurnos.push(['TOTAL','','',Math.round(totMins),parseFloat((totMins/60).toFixed(2)),Math.round(totGan)]);
-
-  /* adelantos del mes */
-  var ames=state.adelantos.filter(function(a){return sameMonth(a.fecha);});
-  var totAdv=ames.reduce(function(s,a){return s+Number(a.monto);},0);
-  var wsAdv=[['Fecha','Nota','Monto ($)']];
-  ames.forEach(function(a){wsAdv.push([fmtShort(a.fecha),a.nota||'-',Math.round(a.monto)]);});
-  wsAdv.push([]); wsAdv.push(['TOTAL','',Math.round(totAdv)]);
-
-  /* feriados del mes */
-  var fmes=state.feriados.filter(function(f){return sameMonth(f.fecha);});
-  var wsHol=[['Fecha','Nota']];
-  fmes.forEach(function(f){wsHol.push([fmtShort(f.fecha),f.nota||'-']);});
-
-  /* resumen */
-  var neto=Math.round(totGan-totAdv);
-  var wsRes=[
-    ['Resumen del mes',''],['',''],
-    ['Mes',mes],
-    ['Turnos',tmes.length],
-    ['Total horas',parseFloat((totMins/60).toFixed(2))],
-    ['Tarifa ($/h)',state.tarifa],['',''],
-    ['Ganancia bruta ($)',Math.round(totGan)],
-    ['Adelantos ($)',Math.round(totAdv)],
-    ['Neto a cobrar ($)',neto],['',''],
-    ['Feriados',fmes.length]
-  ];
-
-  var wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsRes),'Resumen');
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsTurnos),'Turnos');
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsAdv),'Adelantos');
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsHol),'Feriados');
-  XLSX.writeFile(wb,fname);
-  toast('Excel descargado',true);
-});
-
-/* ── toast ───────────────────────────────────────── */
-function toast(msg,hideUndo){
+/* ── toast ─────────────────────────────────────── */
+function showToast(msg,hideUndo){
   var el=document.getElementById('toast');
   document.getElementById('toast-msg').textContent=msg;
   document.getElementById('toast-undo').style.display=hideUndo?'none':'';
   el.hidden=false;
   clearTimeout(toastT);
-  toastT=setTimeout(function(){el.hidden=true;undo=null;},4000);
+  toastT=setTimeout(function(){el.hidden=true;undoState=null;},4000);
 }
 document.getElementById('toast-undo').addEventListener('click',function(){
-  if(undo){state[undo.col].splice(undo.idx,0,undo.item);save();renderAll();}
-  document.getElementById('toast').hidden=true;undo=null;
+  if(undoState){state[undoState.col].splice(undoState.idx,0,undoState.item);save();renderAll();}
+  document.getElementById('toast').hidden=true; undoState=null;
 });
 
-/* ── service worker ──────────────────────────────── */
-if ('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')) {
+/* ── backup bar buttons ────────────────────────── */
+document.getElementById('bk-now').addEventListener('click', function() {
+  doAutoBackup(false);
+});
+
+/* ── auto-backup checkbox sync ──────────────────── */
+var cbAuto = document.getElementById('cfg-autobackup');
+cbAuto.checked = getAutoBackup();
+cbAuto.addEventListener('change', function() {
+  localStorage.setItem('fichada-autobackup', cbAuto.checked ? '1' : '0');
+  showToast(cbAuto.checked ? 'Auto-backup activado' : 'Auto-backup desactivado', true);
+});
+
+// sync checkbox when modal opens
+document.getElementById('btn-cfg').addEventListener('click', function() {
+  document.getElementById('cfg-autobackup').checked = getAutoBackup();
+}, true);
+
+/* ── service worker ────────────────────────────── */
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
   navigator.serviceWorker.register('sw.js').catch(function(){});
 }
 
-/* ── init ────────────────────────────────────────── */
+/* ── init ──────────────────────────────────────── */
 load();
+requestPersist();
 document.getElementById('adv-f').value=today();
 refreshButtons();
 renderAll();
-if (!state.tarifa) { mCfg.hidden=false; }
+if(!state.tarifa){mCfg.hidden=false;}
+updateBackupBar();
 
 })();
 </script>
