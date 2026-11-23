@@ -1,6 +1,10 @@
 const CACHE_NAME = 'fichada-cache-v1';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
+// Cuando clickeas el lápiz -> Editar, también te muestra el timer
+function editarTurno(id) {
+  document.getElementById('timer-container').innerHTML = document.querySelector('.timer-box').outerHTML;
+}
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).catch(()=>{})
